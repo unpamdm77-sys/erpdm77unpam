@@ -11,7 +11,10 @@ import {
   ERPConfig,
   PaymentMethod,
   ParkedOrder,
-  ShiftSummary
+  ShiftSummary,
+  UserAccount,
+  UserRole,
+  SalesTarget
 } from '../types/erp';
 import { mapRowsToBOM } from '../utils/excelExportImport';
 import {
@@ -20,7 +23,11 @@ import {
   INITIAL_TRANSACTIONS,
   INITIAL_PURCHASES,
   INITIAL_EXPENSES,
-  INITIAL_CONFIG
+  INITIAL_CONFIG,
+  INITIAL_USERS,
+  DEFAULT_SALES_TARGET,
+  DEFAULT_MENU_CATEGORIES,
+  DEFAULT_MATERIAL_CATEGORIES
 } from '../data/initialData';
 import { posSound } from '../utils/formatters';
 
@@ -37,6 +44,31 @@ interface ERPContextType {
   orderType: 'Dine In' | 'Take Away' | 'Online Grab/Gojek';
   tableNo: string;
   discount: number;
+  
+  // User Accounts & Authentication (RBAC)
+  isAuthenticated: boolean;
+  users: UserAccount[];
+  currentUser: UserAccount;
+  login: (username: string, password: string) => boolean;
+  logout: () => void;
+  addUser: (user: Omit<UserAccount, 'id' | 'joinDate' | 'isActive'>) => void;
+  updateUser: (id: string, updates: Partial<UserAccount>) => void;
+  deleteUser: (id: string) => void;
+  verifySupervisorOrOwnerPin: (pinOrPassword: string) => boolean;
+
+  // Sales Targets
+  salesTargets: SalesTarget;
+  updateSalesTargets: (targets: Partial<SalesTarget>) => void;
+
+  // Dynamic Categories (Editable & Expandable)
+  menuCategories: string[];
+  materialCategories: string[];
+  addMenuCategory: (cat: string) => void;
+  updateMenuCategory: (oldCat: string, newCat: string) => void;
+  deleteMenuCategory: (cat: string) => void;
+  addMaterialCategory: (cat: string) => void;
+  updateMaterialCategory: (oldCat: string, newCat: string) => void;
+  deleteMaterialCategory: (cat: string) => void;
   
   // Setters
   setCustomerName: (name: string) => void;
@@ -84,6 +116,7 @@ interface ERPContextType {
     reason: StockAdjustment['reason'];
     adjustedBy?: string;
   }) => void;
+  deleteAdjustment: (id: string, restoreStock?: boolean) => void;
 
   // History & Refund
   refundTransaction: (transactionId: string) => void;
@@ -120,9 +153,18 @@ const STORAGE_KEYS = {
   ADJUSTMENTS: 'dimsum77_adjustments_v1',
   CONFIG: 'dimsum77_config_v1',
   PARKED: 'dimsum77_parked_v1',
+  USERS: 'dimsum77_users_v1',
+  CURRENT_USER: 'dimsum77_current_user_v1',
+  SALES_TARGETS: 'dimsum77_targets_v1',
+  MENU_CATS: 'dimsum77_menu_cats_v1',
+  MATERIAL_CATS: 'dimsum77_material_cats_v1',
+  IS_AUTHENTICATED: 'dimsum77_auth_state_v1',
 };
 
 export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return localStorage.getItem(STORAGE_KEYS.IS_AUTHENTICATED) === 'true';
+  });
   const [materials, setMaterials] = useState<Material[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.MATERIALS);
     return saved ? JSON.parse(saved) : INITIAL_MATERIALS;
@@ -158,6 +200,34 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [users, setUsers] = useState<UserAccount[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.USERS);
+    return saved ? JSON.parse(saved) : INITIAL_USERS;
+  });
+
+  const [currentUser, setCurrentUser] = useState<UserAccount>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+    if (saved) {
+      try { return JSON.parse(saved); } catch {}
+    }
+    return INITIAL_USERS[0];
+  });
+
+  const [salesTargets, setSalesTargets] = useState<SalesTarget>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.SALES_TARGETS);
+    return saved ? JSON.parse(saved) : DEFAULT_SALES_TARGET;
+  });
+
+  const [menuCategories, setMenuCategories] = useState<string[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.MENU_CATS);
+    return saved ? JSON.parse(saved) : DEFAULT_MENU_CATEGORIES;
+  });
+
+  const [materialCategories, setMaterialCategories] = useState<string[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.MATERIAL_CATS);
+    return saved ? JSON.parse(saved) : DEFAULT_MATERIAL_CATEGORIES;
+  });
+
   const [config, setConfig] = useState<ERPConfig>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.CONFIG);
     return saved ? { ...INITIAL_CONFIG, ...JSON.parse(saved) } : INITIAL_CONFIG;
@@ -171,6 +241,26 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [discount, setDiscount] = useState<number>(0);
 
   // Persistence effects
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+  }, [users]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
+  }, [currentUser]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.SALES_TARGETS, JSON.stringify(salesTargets));
+  }, [salesTargets]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.MENU_CATS, JSON.stringify(menuCategories));
+  }, [menuCategories]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.MATERIAL_CATS, JSON.stringify(materialCategories));
+  }, [materialCategories]);
+
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.PARKED, JSON.stringify(parkedOrders));
   }, [parkedOrders]);
@@ -580,6 +670,23 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAdjustments(prev => [newAdjustment, ...prev]);
   };
 
+  const deleteAdjustment = (id: string, restoreStock = false) => {
+    const target = adjustments.find(a => a.id === id);
+    if (!target) return;
+
+    if (restoreStock) {
+      setMaterials(prev =>
+        prev.map(m =>
+          m.id === target.materialId
+            ? { ...m, stock: Math.max(0, m.stock - target.difference), lastUpdated: new Date().toISOString().slice(0, 10) }
+            : m
+        )
+      );
+    }
+
+    setAdjustments(prev => prev.filter(a => a.id !== id));
+  };
+
   // Void / Refund Transaction (Restores Raw Material Stock!)
   const refundTransaction = (transactionId: string) => {
     const trx = transactions.find(t => t.id === transactionId);
@@ -848,6 +955,114 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return { successCount, failCount };
   };
 
+  // User Accounts & Authentication (RBAC)
+  const login = (username: string, password: string): boolean => {
+    const found = users.find(
+      u => u.username.toLowerCase() === username.trim().toLowerCase() && u.password === password && u.isActive
+    );
+    if (found) {
+      setCurrentUser(found);
+      setIsAuthenticated(true);
+      localStorage.setItem(STORAGE_KEYS.IS_AUTHENTICATED, 'true');
+      localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(found));
+      updateConfig({ cashierName: found.name });
+      return true;
+    }
+    return false;
+  };
+
+  const logout = () => {
+    setIsAuthenticated(false);
+    localStorage.removeItem(STORAGE_KEYS.IS_AUTHENTICATED);
+  };
+
+  const addUser = (userData: Omit<UserAccount, 'id' | 'joinDate' | 'isActive'>) => {
+    const newUser: UserAccount = {
+      ...userData,
+      id: `usr-${Date.now()}`,
+      joinDate: new Date().toISOString().slice(0, 10),
+      isActive: true
+    };
+    setUsers(prev => [...prev, newUser]);
+  };
+
+  const updateUser = (id: string, updates: Partial<UserAccount>) => {
+    setUsers(prev =>
+      prev.map(u => (u.id === id ? { ...u, ...updates } : u))
+    );
+    if (currentUser.id === id) {
+      setCurrentUser(prev => ({ ...prev, ...updates }));
+    }
+  };
+
+  const deleteUser = (id: string) => {
+    if (users.length <= 1) {
+      alert('Tidak dapat menghapus satu-satunya akun pengguna.');
+      return;
+    }
+    setUsers(prev => prev.filter(u => u.id !== id));
+    if (currentUser.id === id) {
+      const nextUser = users.find(u => u.id !== id) || users[0];
+      setCurrentUser(nextUser);
+    }
+  };
+
+  const verifySupervisorOrOwnerPin = (pinOrPassword: string): boolean => {
+    return users.some(
+      u => (u.role === 'OWNER' || u.role === 'SUPERVISOR') && u.isActive && u.password === pinOrPassword.trim()
+    );
+  };
+
+  // Sales Targets
+  const updateSalesTargets = (targets: Partial<SalesTarget>) => {
+    setSalesTargets(prev => ({ ...prev, ...targets }));
+  };
+
+  // Dynamic Categories (Menu)
+  const addMenuCategory = (cat: string) => {
+    const trimmed = cat.trim();
+    if (!trimmed || menuCategories.includes(trimmed)) return;
+    setMenuCategories(prev => [...prev, trimmed]);
+  };
+
+  const updateMenuCategory = (oldCat: string, newCat: string) => {
+    const trimmed = newCat.trim();
+    if (!trimmed || oldCat === trimmed) return;
+    setMenuCategories(prev => prev.map(c => (c === oldCat ? trimmed : c)));
+    // Also update any menu items using this category
+    setMenuItems(prev => prev.map(m => (m.category === oldCat ? { ...m, category: trimmed } : m)));
+  };
+
+  const deleteMenuCategory = (cat: string) => {
+    if (menuCategories.length <= 1) {
+      alert('Minimal harus ada 1 kategori menu.');
+      return;
+    }
+    setMenuCategories(prev => prev.filter(c => c !== cat));
+  };
+
+  // Dynamic Categories (Material)
+  const addMaterialCategory = (cat: string) => {
+    const trimmed = cat.trim();
+    if (!trimmed || materialCategories.includes(trimmed)) return;
+    setMaterialCategories(prev => [...prev, trimmed]);
+  };
+
+  const updateMaterialCategory = (oldCat: string, newCat: string) => {
+    const trimmed = newCat.trim();
+    if (!trimmed || oldCat === trimmed) return;
+    setMaterialCategories(prev => prev.map(c => (c === oldCat ? trimmed : c)));
+    setMaterials(prev => prev.map(m => (m.category === oldCat ? { ...m, category: trimmed } : m)));
+  };
+
+  const deleteMaterialCategory = (cat: string) => {
+    if (materialCategories.length <= 1) {
+      alert('Minimal harus ada 1 kategori bahan.');
+      return;
+    }
+    setMaterialCategories(prev => prev.filter(c => c !== cat));
+  };
+
   const resetAllData = () => {
     setMaterials(INITIAL_MATERIALS);
     setMenuItems(INITIAL_MENU_ITEMS);
@@ -856,6 +1071,11 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setExpenses(INITIAL_EXPENSES);
     setAdjustments([]);
     setParkedOrders([]);
+    setUsers(INITIAL_USERS);
+    setCurrentUser(INITIAL_USERS[0]);
+    setSalesTargets(DEFAULT_SALES_TARGET);
+    setMenuCategories(DEFAULT_MENU_CATEGORIES);
+    setMaterialCategories(DEFAULT_MATERIAL_CATEGORIES);
     setConfig(INITIAL_CONFIG);
     setCart([]);
   };
@@ -876,6 +1096,25 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         orderType,
         tableNo,
         discount,
+        isAuthenticated,
+        users,
+        currentUser,
+        login,
+        logout,
+        addUser,
+        updateUser,
+        deleteUser,
+        verifySupervisorOrOwnerPin,
+        salesTargets,
+        updateSalesTargets,
+        menuCategories,
+        materialCategories,
+        addMenuCategory,
+        updateMenuCategory,
+        deleteMenuCategory,
+        addMaterialCategory,
+        updateMaterialCategory,
+        deleteMaterialCategory,
         setCustomerName,
         setOrderType,
         setTableNo,
@@ -903,6 +1142,7 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addExpense,
         deleteExpense,
         addAdjustment,
+        deleteAdjustment,
         refundTransaction,
         syncWithGoogleSheet,
         syncAllToGoogleSheet,

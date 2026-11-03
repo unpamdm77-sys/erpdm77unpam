@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useERP } from '../../context/ERPContext';
 import { MenuItem, RecipeIngredient } from '../../types/erp';
 import { formatRupiah } from '../../utils/formatters';
+import { CategoryManagerModal } from '../categories/CategoryManagerModal';
 import {
   Utensils,
   Plus,
@@ -13,15 +14,31 @@ import {
   Calculator,
   Search,
   Check,
-  Flame
+  Flame,
+  Tags,
+  Lock,
+  AlertCircle
 } from 'lucide-react';
 
 export const ProductsTab: React.FC = () => {
-  const { menuItems, materials, addMenuItem, updateMenuItem, deleteMenuItem, calculateMenuHpp } = useERP();
+  const {
+    menuItems,
+    materials,
+    addMenuItem,
+    updateMenuItem,
+    deleteMenuItem,
+    calculateMenuHpp,
+    menuCategories,
+    currentUser
+  } = useERP();
 
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Semua');
   const [expandedItemId, setExpandedItemId] = useState<string | null>(menuItems[0]?.id || null);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+
+  // RBAC permissions: Owner & Finance can edit menu; Supervisor & Staff cannot
+  const canEditMenu = currentUser.role === 'OWNER' || currentUser.role === 'FINANCE';
 
   // Modal states
   const [showModal, setShowModal] = useState(false);
@@ -30,16 +47,17 @@ export const ProductsTab: React.FC = () => {
   // Form states
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
-  const [category, setCategory] = useState<MenuItem['category']>('Dimsum Mentai');
+  const [category, setCategory] = useState<string>(menuCategories[0] || 'Dimsum Mentai');
   const [price, setPrice] = useState<number | ''>('');
   const [description, setDescription] = useState('');
   const [recipe, setRecipe] = useState<RecipeIngredient[]>([]);
 
   const handleOpenAdd = () => {
+    if (!canEditMenu) return;
     setEditingItem(null);
     setCode(`DM-${(menuItems.length + 1).toString().padStart(2, '0')}`);
     setName('');
-    setCategory('Dimsum Mentai');
+    setCategory(menuCategories[0] || 'Dimsum Mentai');
     setPrice('');
     setDescription('');
     // Start with 1 default ingredient
@@ -48,6 +66,7 @@ export const ProductsTab: React.FC = () => {
   };
 
   const handleOpenEdit = (item: MenuItem) => {
+    if (!canEditMenu) return;
     setEditingItem(item);
     setCode(item.code);
     setName(item.name);
@@ -108,7 +127,8 @@ export const ProductsTab: React.FC = () => {
   };
 
   const filteredMenu = menuItems.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase()) ||
+    const matchesSearch =
+      item.name.toLowerCase().includes(search.toLowerCase()) ||
       item.code.toLowerCase().includes(search.toLowerCase());
     const matchesCategory = selectedCategory === 'Semua' || item.category === selectedCategory;
     return matchesSearch && matchesCategory;
@@ -132,19 +152,46 @@ export const ProductsTab: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={handleOpenAdd}
-          className="flex items-center space-x-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-sm transition text-xs"
-        >
-          <Plus size={16} />
-          <span>+ Tambah Menu Baru</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Kelola Kategori Button */}
+          <button
+            onClick={() => setShowCategoryModal(true)}
+            className="flex items-center space-x-1.5 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition text-xs border border-slate-200"
+          >
+            <Tags size={15} />
+            <span>Kelola Kategori</span>
+          </button>
+
+          {canEditMenu ? (
+            <button
+              onClick={handleOpenAdd}
+              className="flex items-center space-x-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-xs transition text-xs"
+            >
+              <Plus size={16} />
+              <span>Tambah Menu Baru</span>
+            </button>
+          ) : (
+            <div className="flex items-center space-x-1.5 px-3.5 py-2.5 bg-slate-100 text-slate-500 rounded-xl text-xs font-semibold border border-slate-200">
+              <Lock size={14} />
+              <span>Mode Lihat ({currentUser.role})</span>
+            </div>
+          )}
+        </div>
       </div>
+
+      {!canEditMenu && (
+        <div className="p-3.5 bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl text-xs flex items-center gap-2">
+          <AlertCircle size={16} className="text-amber-600 shrink-0" />
+          <span>
+            <strong>Informasi Akses:</strong> Akun Anda berstatus <strong>{currentUser.role}</strong> (Mode Lihat). Sesuai kebijakan operasional, hanya <strong>Owner</strong> dan <strong>Finance</strong> yang memiliki hak akses untuk menambah, mengubah resep BOM, atau menghapus menu.
+          </span>
+        </div>
+      )}
 
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
         <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1">
-          {['Semua', 'Dimsum Mentai', 'Dimsum Goreng', 'Dimsum Kukus', 'Minuman', 'Frozen Pack', 'Extra Topping'].map(cat => (
+          {['Semua', ...menuCategories].map(cat => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
@@ -196,77 +243,78 @@ export const ProductsTab: React.FC = () => {
                   <p className="text-xs text-slate-500 mt-0.5">{item.description}</p>
                 </div>
 
-                <div className="flex items-center space-x-1">
-                  <button
-                    onClick={() => handleOpenEdit(item)}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-100"
-                  >
-                    <Edit2 size={15} />
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (confirm(`Hapus menu "${item.name}"?`)) {
-                        deleteMenuItem(item.id);
-                      }
-                    }}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-slate-100"
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                </div>
+                {canEditMenu && (
+                  <div className="flex items-center space-x-1">
+                    <button
+                      onClick={() => handleOpenEdit(item)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-100"
+                      title="Edit Menu & Resep"
+                    >
+                      <Edit2 size={15} />
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm(`Hapus menu "${item.name}"?`)) {
+                          deleteMenuItem(item.id);
+                        }
+                      }}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-slate-100"
+                      title="Hapus Menu"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Financial Box: Harga Jual vs HPP vs Margin */}
               <div className="grid grid-cols-3 gap-2 p-3 bg-slate-50 rounded-2xl border border-slate-100 text-center">
                 <div>
-                  <p className="text-[10px] text-slate-500 font-semibold uppercase">Harga Jual</p>
-                  <p className="text-sm font-black text-slate-900 mt-0.5">{formatRupiah(item.price)}</p>
+                  <span className="text-[10px] text-slate-400 font-semibold block uppercase">Harga Jual</span>
+                  <span className="text-xs font-bold text-slate-900">{formatRupiah(item.price)}</span>
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-500 font-semibold uppercase">HPP (Modal BOM)</p>
-                  <p className="text-sm font-black text-amber-700 mt-0.5">{formatRupiah(hpp)}</p>
+                  <span className="text-[10px] text-slate-400 font-semibold block uppercase">BOM (HPP)</span>
+                  <span className="text-xs font-bold text-amber-700">{formatRupiah(hpp)}</span>
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-500 font-semibold uppercase">Margin Kotor</p>
-                  <p className="text-sm font-black text-emerald-600 mt-0.5">
-                    {margin}% <span className="text-[10px] font-normal">({formatRupiah(profit)})</span>
-                  </p>
+                  <span className="text-[10px] text-slate-400 font-semibold block uppercase">Margin Laba</span>
+                  <span className={`text-xs font-bold ${margin >= 40 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                    {margin}% ({formatRupiah(profit)})
+                  </span>
                 </div>
               </div>
 
-              {/* Recipe BOM Toggle */}
-              <div>
+              {/* Collapsible BOM Recipe Details */}
+              <div className="border-t border-slate-100 pt-3">
                 <button
-                  type="button"
                   onClick={() => setExpandedItemId(isExpanded ? null : item.id)}
-                  className="w-full flex items-center justify-between text-xs font-bold text-slate-700 p-2 rounded-xl bg-slate-100/70 hover:bg-slate-100 transition"
+                  className="flex items-center justify-between w-full text-xs font-semibold text-slate-600 hover:text-slate-900"
                 >
                   <span className="flex items-center gap-1.5">
-                    <Calculator size={14} className="text-amber-600" />
-                    <span>Komposisi Resep ({item.recipe.length} Bahan Baku)</span>
+                    <Calculator size={14} className="text-amber-500" />
+                    <span>Komposisi Resep Bahan ({item.recipe.length} bahan)</span>
                   </span>
                   {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                 </button>
 
                 {isExpanded && (
-                  <div className="mt-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200/60 space-y-2 text-xs">
+                  <div className="mt-3 space-y-1.5 bg-slate-50 p-3 rounded-2xl border border-slate-200/60 text-xs animate-in fade-in duration-150">
                     {item.recipe.length === 0 ? (
-                      <p className="text-slate-400 text-center py-2 text-[11px]">Resep belum ditentukan.</p>
+                      <p className="text-slate-400 text-center py-2 text-[11px]">Belum ada bahan baku yang dikaitkan.</p>
                     ) : (
                       item.recipe.map((ing, idx) => {
                         const mat = materials.find(m => m.id === ing.materialId);
-                        const cost = mat ? mat.costPerUnit * ing.qty : 0;
+                        const subtotal = mat ? mat.costPerUnit * ing.qty : 0;
                         return (
-                          <div key={idx} className="flex justify-between items-center text-[11px] py-1 border-b border-slate-200/50 last:border-none">
-                            <span className="font-medium text-slate-800">
-                              {mat ? mat.name : 'Bahan tidak ditemukan'}
-                            </span>
-                            <div className="text-right">
-                              <span className="font-bold text-slate-900">
-                                {ing.qty} {mat?.unit}
+                          <div key={idx} className="flex justify-between items-center text-[11px] py-1 border-b border-slate-200/40 last:border-0">
+                            <div>
+                              <span className="font-semibold text-slate-800">{mat?.name || 'Bahan Dihapus'}</span>
+                              <span className="text-slate-400 ml-1">
+                                ({ing.qty} {mat?.unit || 'unit'} @ {mat ? formatRupiah(mat.costPerUnit) : 0})
                               </span>
-                              <span className="text-slate-400 ml-1.5">({formatRupiah(cost)})</span>
                             </div>
+                            <span className="font-mono font-bold text-slate-700">{formatRupiah(subtotal)}</span>
                           </div>
                         );
                       })
@@ -279,23 +327,17 @@ export const ProductsTab: React.FC = () => {
         })}
       </div>
 
-      {/* ADD / EDIT MENU MODAL */}
+      {/* Add / Edit Menu Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-xl w-full overflow-hidden border border-slate-200 my-8">
-            <div className="bg-slate-900 text-white p-5 flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Utensils className="text-amber-400" size={20} />
-                <h3 className="font-bold text-base">
-                  {editingItem ? 'Edit Menu & Resep HPP' : 'Tambah Menu Baru & Komposisi HPP'}
-                </h3>
-              </div>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-white">✕</button>
-            </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-slate-200 p-6 space-y-4">
+            <h3 className="text-lg font-black text-slate-900">
+              {editingItem ? 'Edit Menu & Resep BOM' : 'Tambah Menu Dimsum Baru'}
+            </h3>
 
-            <form onSubmit={handleSaveMenu} className="p-6 space-y-4 text-xs max-h-[75vh] overflow-y-auto">
+            <form onSubmit={handleSaveMenu} className="space-y-4 text-xs">
               <div className="grid grid-cols-3 gap-3">
-                <div>
+                <div className="col-span-1">
                   <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Kode Menu</label>
                   <input
                     type="text"
@@ -323,15 +365,14 @@ export const ProductsTab: React.FC = () => {
                   <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Kategori</label>
                   <select
                     value={category}
-                    onChange={e => setCategory(e.target.value as any)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-medium"
+                    onChange={e => setCategory(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-medium bg-white"
                   >
-                    <option value="Dimsum Mentai">Dimsum Mentai</option>
-                    <option value="Dimsum Goreng">Dimsum Goreng</option>
-                    <option value="Dimsum Kukus">Dimsum Kukus</option>
-                    <option value="Minuman">Minuman</option>
-                    <option value="Frozen Pack">Frozen Pack</option>
-                    <option value="Extra Topping">Extra Topping</option>
+                    {menuCategories.map(cat => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -379,7 +420,7 @@ export const ProductsTab: React.FC = () => {
                   </button>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                   {recipe.map((ing, idx) => {
                     const mat = materials.find(m => m.id === ing.materialId);
                     const cost = mat ? mat.costPerUnit * ing.qty : 0;
@@ -413,7 +454,7 @@ export const ProductsTab: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => handleRemoveRecipeIngredient(idx)}
-                          className="text-slate-400 hover:text-rose-600 p-1"
+                          className="p-1 text-rose-500 hover:text-rose-700"
                         >
                           <Trash2 size={14} />
                         </button>
@@ -422,38 +463,38 @@ export const ProductsTab: React.FC = () => {
                   })}
                 </div>
 
-                {/* Live Form HPP summary */}
-                <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 flex justify-between items-center text-xs">
-                  <div>
-                    <span className="font-bold text-emerald-900">Total HPP per Porsi:</span>
-                    <p className="text-[10px] text-emerald-700">
-                      Laba per porsi: {formatRupiah(Number(price || 0) - calculateFormHpp())}
-                    </p>
-                  </div>
-                  <span className="text-base font-black text-emerald-800">
-                    {formatRupiah(calculateFormHpp())}
-                  </span>
+                <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-2xl flex justify-between items-center text-xs">
+                  <span className="font-bold text-amber-900">Total Biaya Resep (BOM):</span>
+                  <span className="font-black text-amber-900 text-sm">{formatRupiah(calculateFormHpp())}</span>
                 </div>
               </div>
 
-              <div className="flex gap-2 pt-3">
+              <div className="flex justify-end space-x-2 pt-4 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl"
+                  className="px-4 py-2 border border-slate-300 rounded-xl font-semibold text-slate-600 hover:bg-slate-100"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl shadow-md transition"
+                  className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-xs"
                 >
-                  Simpan Menu & Resep
+                  Simpan Menu
                 </button>
               </div>
             </form>
           </div>
         </div>
+      )}
+
+      {/* Category Manager Modal */}
+      {showCategoryModal && (
+        <CategoryManagerModal
+          defaultTab="menu"
+          onClose={() => setShowCategoryModal(false)}
+        />
       )}
     </div>
   );

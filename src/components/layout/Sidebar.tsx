@@ -13,8 +13,13 @@ import {
   Flame,
   Cloud,
   CheckCircle2,
-  X
+  X,
+  Shield,
+  Users,
+  LogOut,
+  ChevronRight
 } from 'lucide-react';
+import { UserRole } from '../../types/erp';
 
 interface SidebarProps {
   activeTab: string;
@@ -22,9 +27,11 @@ interface SidebarProps {
   isMobileOpen: boolean;
   onCloseMobile: () => void;
   onOpenGoogleSheetSettings: () => void;
+  onOpenAccountSettings: () => void;
+  onOpenAccountSwitcher: () => void;
 }
 
-const NAV_ITEMS = [
+const ALL_NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'pos', label: 'Kasir (POS)', icon: Receipt, highlight: true },
   { id: 'purchasing', label: 'Purchasing', icon: ShoppingCart },
@@ -34,6 +41,7 @@ const NAV_ITEMS = [
   { id: 'finance', label: 'Laporan Keuangan', icon: Wallet },
   { id: 'history', label: 'Riwayat Penjualan', icon: History },
   { id: 'import', label: 'Import Excel', icon: FileSpreadsheet },
+  { id: 'settings', label: 'Setting Akun Staff', icon: Shield, ownerOnly: true },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -41,11 +49,45 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectTab,
   isMobileOpen,
   onCloseMobile,
-  onOpenGoogleSheetSettings
+  onOpenGoogleSheetSettings,
+  onOpenAccountSettings,
+  onOpenAccountSwitcher
 }) => {
-  const { config, transactions } = useERP();
+  const { config, transactions, currentUser, logout } = useERP();
   const isSheetConfigured = Boolean(config.googleWebAppUrl && config.googleWebAppUrl.trim().length > 0);
   const pendingCount = transactions.filter(t => !t.syncedToGoogleSheet).length;
+
+  // Role permissions filter
+  const isStaffOrSupervisor = currentUser.role === 'STAFF' || currentUser.role === 'SUPERVISOR';
+  const isOwner = currentUser.role === 'OWNER';
+
+  const visibleNavItems = ALL_NAV_ITEMS.filter(item => {
+    // Owner can access all
+    if (isOwner) return true;
+
+    // Setting Akun is strictly for Owner
+    if (item.ownerOnly) return false;
+
+    // Staff and Supervisor cannot access Laporan Keuangan and Import Excel
+    if (isStaffOrSupervisor) {
+      if (item.id === 'finance' || item.id === 'import') return false;
+    }
+
+    return true;
+  });
+
+  const getRoleBadge = (r: UserRole) => {
+    switch (r) {
+      case 'OWNER':
+        return <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-400 text-slate-950">OWNER</span>;
+      case 'SUPERVISOR':
+        return <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-blue-400 text-slate-950">SPV</span>;
+      case 'FINANCE':
+        return <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-emerald-400 text-slate-950">FINANCE</span>;
+      case 'STAFF':
+        return <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-slate-300 text-slate-900">STAFF</span>;
+    }
+  };
 
   const content = (
     <div className="h-full flex flex-col justify-between bg-slate-900 text-white select-none">
@@ -77,8 +119,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Navigation list */}
-        <nav className="p-3.5 space-y-1 overflow-y-auto max-h-[calc(100vh-14rem)]">
-          {NAV_ITEMS.map(item => {
+        <nav className="p-3.5 space-y-1 overflow-y-auto max-h-[calc(100vh-16rem)]">
+          {visibleNavItems.map(item => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
 
@@ -102,25 +144,67 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {item.id === 'pos' && !isActive && (
                   <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
                 )}
+                {item.ownerOnly && (
+                  <span className="text-[9px] bg-amber-400/20 text-amber-300 px-1.5 py-0.5 rounded font-black border border-amber-400/30">
+                    OWNER
+                  </span>
+                )}
               </button>
             );
           })}
         </nav>
       </div>
 
-      {/* Bottom Footer Info */}
-      <div className="p-4 border-t border-slate-800 space-y-2">
+      {/* Bottom Footer & User Profile */}
+      <div className="p-3.5 border-t border-slate-800 space-y-2">
+        {/* User Account Bar */}
+        <div
+          onClick={onOpenAccountSwitcher}
+          className="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 cursor-pointer transition flex items-center justify-between group"
+          title="Klik untuk Beralih Akun"
+        >
+          <div className="flex items-center space-x-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-full bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-center shrink-0">
+              {currentUser.name.charAt(0)}
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center space-x-1.5">
+                <span className="text-xs font-bold text-slate-200 truncate">{currentUser.name}</span>
+                {getRoleBadge(currentUser.role)}
+              </div>
+              <p className="text-[10px] text-slate-400 font-mono truncate">@{currentUser.username}</p>
+            </div>
+          </div>
+          <ChevronRight size={14} className="text-slate-400 group-hover:text-amber-400 transition shrink-0" />
+        </div>
+
+        {/* Logout Button */}
+        <button
+          onClick={() => {
+            if (confirm(`Apakah Anda yakin ingin keluar dari akun ${currentUser.name}?`)) {
+              logout();
+            }
+          }}
+          className="w-full py-2 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 hover:text-rose-100 text-left text-xs font-bold flex items-center justify-between transition border border-rose-500/20"
+        >
+          <div className="flex items-center space-x-2">
+            <LogOut size={13} className="text-rose-400" />
+            <span>Keluar Sesi</span>
+          </div>
+          <span className="text-[10px] text-rose-400/80 font-mono">Logout &rarr;</span>
+        </button>
+
         {/* Google Sheets Status button */}
         <button
           onClick={onOpenGoogleSheetSettings}
-          className="w-full p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-300 text-left text-[11px] flex items-center justify-between transition border border-slate-700/60"
+          className="w-full p-2 rounded-xl bg-slate-800/50 hover:bg-slate-800 text-slate-300 text-left text-[11px] flex items-center justify-between transition border border-slate-800"
         >
           <div className="flex items-center space-x-2">
-            <Cloud size={14} className={isSheetConfigured ? 'text-emerald-400' : 'text-slate-400'} />
-            <span className="truncate">Google Sheets</span>
+            <Cloud size={13} className={isSheetConfigured ? 'text-emerald-400' : 'text-slate-400'} />
+            <span className="truncate text-[10px]">Cloud Sheets</span>
           </div>
           <span
-            className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+            className={`px-1.5 py-0.5 rounded text-[8px] font-bold ${
               isSheetConfigured ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-700 text-slate-400'
             }`}
           >
@@ -128,9 +212,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </span>
         </button>
 
-        <div className="px-1 text-[10px] text-slate-400 flex items-center justify-between">
-          <span className="truncate">Kasir: {config.cashierName.split('(')[0]}</span>
-          <span className="text-amber-400 font-bold">v1.2</span>
+        <div className="px-1 text-[9px] text-slate-500 flex items-center justify-between">
+          <span className="truncate">Sistem ERP POS v1.3</span>
+          <span className="text-amber-400/80 font-semibold">UNPAM 77</span>
         </div>
       </div>
     </div>

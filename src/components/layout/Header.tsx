@@ -1,12 +1,14 @@
 import React from 'react';
 import { useERP } from '../../context/ERPContext';
-import { Menu, Flame, Cloud, Receipt, Bell } from 'lucide-react';
+import { Menu, Flame, Cloud, Receipt, Bell, User, Users, LogOut } from 'lucide-react';
+import { UserRole } from '../../types/erp';
 
 interface HeaderProps {
   activeTab: string;
   onOpenMobileMenu: () => void;
   onOpenGoogleSheetSettings: () => void;
   onOpenVercelGuide?: () => void;
+  onOpenAccountSwitcher?: () => void;
   onSwitchTab: (tabId: string) => void;
 }
 
@@ -20,6 +22,7 @@ const TAB_TITLES: Record<string, string> = {
   finance: 'Laporan Keuangan & Pengeluaran',
   history: 'Riwayat Penjualan Kasir',
   import: 'Export & Import Excel',
+  settings: 'Setting Akun & Sandi Karyawan (Khusus Owner)',
 };
 
 export const Header: React.FC<HeaderProps> = ({
@@ -27,10 +30,24 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenMobileMenu,
   onOpenGoogleSheetSettings,
   onOpenVercelGuide,
+  onOpenAccountSwitcher,
   onSwitchTab,
 }) => {
-  const { materials, cart } = useERP();
+  const { materials, cart, currentUser, logout } = useERP();
   const lowStockCount = materials.filter(m => m.stock <= m.minStock).length;
+
+  const getRoleBadge = (r: UserRole) => {
+    switch (r) {
+      case 'OWNER':
+        return <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-100 text-amber-800 border border-amber-300">OWNER</span>;
+      case 'SUPERVISOR':
+        return <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-blue-100 text-blue-800 border border-blue-300">SPV</span>;
+      case 'FINANCE':
+        return <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">FINANCE</span>;
+      case 'STAFF':
+        return <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-slate-100 text-slate-700 border border-slate-300">STAFF</span>;
+    }
+  };
 
   return (
     <header className="bg-white border-b border-slate-200/80 px-4 md:px-8 py-3.5 flex items-center justify-between sticky top-0 z-20 shrink-0">
@@ -54,6 +71,21 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Right: Quick Indicators & Buttons */}
       <div className="flex items-center space-x-2.5">
+        {/* User Switcher Quick Button */}
+        {onOpenAccountSwitcher && (
+          <button
+            onClick={onOpenAccountSwitcher}
+            className="flex items-center space-x-2 px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-800 text-xs font-semibold transition"
+            title="Klik untuk beralih akun / login"
+          >
+            <div className="w-5 h-5 rounded-full bg-amber-500 text-slate-950 font-black text-[10px] flex items-center justify-center">
+              {currentUser.name.charAt(0)}
+            </div>
+            <span className="hidden sm:inline font-bold text-[11px]">{currentUser.name}</span>
+            {getRoleBadge(currentUser.role)}
+          </button>
+        )}
+
         {/* Vercel Deploy Guide Button */}
         {onOpenVercelGuide && (
           <button
@@ -90,7 +122,7 @@ export const Header: React.FC<HeaderProps> = ({
         {activeTab !== 'pos' && (
           <button
             onClick={() => onSwitchTab('pos')}
-            className="flex items-center space-x-1.5 px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl shadow-xs transition text-xs"
+            className="flex items-center space-x-1.5 px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl shadow-xs transition text-xs cursor-pointer"
           >
             <Receipt size={15} />
             <span className="hidden sm:inline">Kasir POS</span>
@@ -101,6 +133,19 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </button>
         )}
+
+        {/* Logout Button */}
+        <button
+          onClick={() => {
+            if (confirm(`Apakah Anda yakin ingin keluar dari akun ${currentUser.name}?`)) {
+              logout();
+            }
+          }}
+          title="Keluar Sesi (Logout)"
+          className="p-2 rounded-xl text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition border border-slate-200 cursor-pointer"
+        >
+          <LogOut size={16} />
+        </button>
       </div>
     </header>
   );

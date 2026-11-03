@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useERP } from '../../context/ERPContext';
 import { formatRupiah, formatNumber, formatDateTime } from '../../utils/formatters';
 import {
@@ -9,9 +9,14 @@ import {
   Flame,
   ArrowUpRight,
   PackageCheck,
-  PlusCircle,
   Receipt,
-  Truck
+  Truck,
+  Target,
+  Edit3,
+  X,
+  CheckCircle2,
+  Calendar,
+  Sparkles
 } from 'lucide-react';
 
 interface DashboardTabProps {
@@ -19,7 +24,22 @@ interface DashboardTabProps {
 }
 
 export const DashboardTab: React.FC<DashboardTabProps> = ({ onSwitchTab }) => {
-  const { transactions, materials, menuItems, expenses, purchases } = useERP();
+  const {
+    transactions,
+    materials,
+    menuItems,
+    expenses,
+    salesTargets,
+    updateSalesTargets,
+    currentUser
+  } = useERP();
+
+  // Target modal state
+  const [showTargetModal, setShowTargetModal] = useState(false);
+  const [dailyTargetInput, setDailyTargetInput] = useState<number>(salesTargets.daily);
+  const [weeklyTargetInput, setWeeklyTargetInput] = useState<number>(salesTargets.weekly);
+  const [monthlyTargetInput, setMonthlyTargetInput] = useState<number>(salesTargets.monthly);
+  const [targetSuccessMsg, setTargetSuccessMsg] = useState('');
 
   // Filter for today's transactions
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -37,6 +57,47 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ onSwitchTab }) => {
     .reduce((acc, e) => acc + e.amount, 0);
 
   const todayNetProfit = todayGrossProfit - todayExpenses;
+
+  // Weekly transactions (Last 7 Days)
+  const now = new Date();
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const weekTransactions = transactions.filter(
+    t => t.status === 'COMPLETED' && t.date.slice(0, 10) >= sevenDaysAgo
+  );
+  const weekOmset = weekTransactions.reduce((acc, t) => acc + t.total, 0);
+
+  // Monthly transactions (Current Month YYYY-MM)
+  const currentMonthStr = todayStr.slice(0, 7);
+  const monthTransactions = transactions.filter(
+    t => t.status === 'COMPLETED' && t.date.startsWith(currentMonthStr)
+  );
+  const monthOmset = monthTransactions.reduce((acc, t) => acc + t.total, 0);
+
+  // Target Progress Percentages
+  const dailyProgress = salesTargets.daily > 0 ? Math.min(100, Math.round((todayOmset / salesTargets.daily) * 100)) : 0;
+  const weeklyProgress = salesTargets.weekly > 0 ? Math.min(100, Math.round((weekOmset / salesTargets.weekly) * 100)) : 0;
+  const monthlyProgress = salesTargets.monthly > 0 ? Math.min(100, Math.round((monthOmset / salesTargets.monthly) * 100)) : 0;
+
+  const handleOpenTargetModal = () => {
+    setDailyTargetInput(salesTargets.daily);
+    setWeeklyTargetInput(salesTargets.weekly);
+    setMonthlyTargetInput(salesTargets.monthly);
+    setTargetSuccessMsg('');
+    setShowTargetModal(true);
+  };
+
+  const handleSaveTargets = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateSalesTargets({
+      daily: Number(dailyTargetInput) || 0,
+      weekly: Number(weeklyTargetInput) || 0,
+      monthly: Number(monthlyTargetInput) || 0
+    });
+    setTargetSuccessMsg('Target penjualan berhasil diperbarui!');
+    setTimeout(() => {
+      setShowTargetModal(false);
+    }, 800);
+  };
 
   // Low stock materials
   const lowStockMaterials = materials.filter(m => m.stock <= m.minStock);
@@ -77,7 +138,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ onSwitchTab }) => {
           </div>
           <h2 className="text-2xl font-black tracking-tight">Dashboard Operasional Dimsum</h2>
           <p className="text-slate-300 text-xs md:text-sm">
-            Pantau penjualan realtime, stok bahan mentai, dan laporan laba kotor hari ini.
+            Pantau penjualan realtime, target omset berkala, stok bahan mentai, dan laba kotor hari ini.
           </p>
         </div>
 
@@ -96,6 +157,153 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ onSwitchTab }) => {
             <Truck size={16} />
             <span>Restock Bahan</span>
           </button>
+        </div>
+      </div>
+
+      {/* TARGET PENJUALAN SECTION (Harian, Mingguan, Bulanan) */}
+      <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold">
+              <Target size={22} className="text-amber-500" />
+            </div>
+            <div>
+              <h3 className="font-black text-slate-900 text-base">Target Penjualan Outlet UNPAM</h3>
+              <p className="text-xs text-slate-500">
+                Pencapaian target omset penjualan: Harian (Hari ini), Mingguan (7 Hari), dan Bulanan (Bulan Berjalan)
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={handleOpenTargetModal}
+            className="flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-amber-100 text-slate-800 hover:text-amber-900 font-bold text-xs transition self-start sm:self-auto border border-slate-200 hover:border-amber-300"
+          >
+            <Edit3 size={15} />
+            <span>Atur Target Penjualan</span>
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+          {/* Target Harian */}
+          <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-50/70 to-amber-100/30 border border-amber-200/70 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-amber-900 uppercase tracking-wide">Target Harian</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                dailyProgress >= 100
+                  ? 'bg-emerald-500 text-white'
+                  : dailyProgress >= 70
+                  ? 'bg-amber-500 text-slate-950'
+                  : 'bg-slate-200 text-slate-700'
+              }`}>
+                {dailyProgress >= 100 ? '🎉 Tercapai!' : `${dailyProgress}%`}
+              </span>
+            </div>
+
+            <div>
+              <div className="flex items-baseline justify-between">
+                <span className="text-xl font-black text-slate-900">{formatRupiah(todayOmset)}</span>
+                <span className="text-xs text-slate-500">/ {formatRupiah(salesTargets.daily)}</span>
+              </div>
+              <p className="text-[10px] text-slate-500 mt-0.5">
+                {todayOmset >= salesTargets.daily ? (
+                  <span className="text-emerald-700 font-bold">Surplus +{formatRupiah(todayOmset - salesTargets.daily)}</span>
+                ) : (
+                  <span>Sisa: <strong className="text-slate-700">{formatRupiah(salesTargets.daily - todayOmset)}</strong></span>
+                )}
+              </p>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="w-full bg-slate-200/80 h-2.5 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-700 ${
+                  dailyProgress >= 100 ? 'bg-emerald-500' : 'bg-gradient-to-r from-amber-500 to-amber-600'
+                }`}
+                style={{ width: `${Math.min(100, dailyProgress)}%` }}
+              ></div>
+            </div>
+          </div>
+
+          {/* Target Mingguan (7 Hari) */}
+          <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50/70 to-blue-100/30 border border-blue-200/70 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-blue-900 uppercase tracking-wide">Target Mingguan (7 Hari)</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                weeklyProgress >= 100
+                  ? 'bg-emerald-500 text-white'
+                  : weeklyProgress >= 70
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-slate-200 text-slate-700'
+              }`}>
+                {weeklyProgress >= 100 ? '🎉 Tercapai!' : `${weeklyProgress}%`}
+              </span>
+            </div>
+
+            <div>
+              <div className="flex items-baseline justify-between">
+                <span className="text-xl font-black text-slate-900">{formatRupiah(weekOmset)}</span>
+                <span className="text-xs text-slate-500">/ {formatRupiah(salesTargets.weekly)}</span>
+              </div>
+              <p className="text-[10px] text-slate-500 mt-0.5">
+                {weekOmset >= salesTargets.weekly ? (
+                  <span className="text-emerald-700 font-bold">Surplus +{formatRupiah(weekOmset - salesTargets.weekly)}</span>
+                ) : (
+                  <span>Sisa: <strong className="text-slate-700">{formatRupiah(salesTargets.weekly - weekOmset)}</strong></span>
+                )}
+              </p>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="w-full bg-slate-200/80 h-2.5 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-700 ${
+                  weeklyProgress >= 100 ? 'bg-emerald-500' : 'bg-gradient-to-r from-blue-500 to-blue-600'
+                }`}
+                style={{ width: `${Math.min(100, weeklyProgress)}%` }}
+              ></div>
+            </div>
+          </div>
+
+          {/* Target Bulanan */}
+          <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50/70 to-emerald-100/30 border border-emerald-200/70 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-emerald-900 uppercase tracking-wide">Target Bulanan (Bulan Ini)</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                monthlyProgress >= 100
+                  ? 'bg-emerald-500 text-white'
+                  : monthlyProgress >= 70
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-slate-200 text-slate-700'
+              }`}>
+                {monthlyProgress >= 100 ? '🎉 Tercapai!' : `${monthlyProgress}%`}
+              </span>
+            </div>
+
+            <div>
+              <div className="flex items-baseline justify-between">
+                <span className="text-xl font-black text-slate-900">{formatRupiah(monthOmset)}</span>
+                <span className="text-xs text-slate-500">/ {formatRupiah(salesTargets.monthly)}</span>
+              </div>
+              <p className="text-[10px] text-slate-500 mt-0.5">
+                {monthOmset >= salesTargets.monthly ? (
+                  <span className="text-emerald-700 font-bold">Surplus +{formatRupiah(monthOmset - salesTargets.monthly)}</span>
+                ) : (
+                  <span>Sisa: <strong className="text-slate-700">{formatRupiah(salesTargets.monthly - monthOmset)}</strong></span>
+                )}
+              </p>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="w-full bg-slate-200/80 h-2.5 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-700 ${
+                  monthlyProgress >= 100 ? 'bg-emerald-500' : 'bg-gradient-to-r from-emerald-500 to-emerald-600'
+                }`}
+                style={{ width: `${Math.min(100, monthlyProgress)}%` }}
+              ></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -334,6 +542,110 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ onSwitchTab }) => {
           </table>
         </div>
       </div>
+
+      {/* Target Setting Modal */}
+      {showTargetModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md border border-slate-200 overflow-hidden">
+            <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-bold">
+                  <Target size={18} />
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm text-amber-400">Atur Target Penjualan</h4>
+                  <p className="text-[11px] text-slate-300">Target omset harian, mingguan, bulanan</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowTargetModal(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveTargets} className="p-6 space-y-4">
+              {targetSuccessMsg && (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold flex items-center gap-2">
+                  <CheckCircle2 size={16} />
+                  <span>{targetSuccessMsg}</span>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Target Penjualan Harian (Rp)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="10000"
+                  required
+                  value={dailyTargetInput}
+                  onChange={e => setDailyTargetInput(Number(e.target.value))}
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-mono font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Target omset kasir per hari (misal: Rp 1.500.000)
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Target Penjualan Mingguan (Rp)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="50000"
+                  required
+                  value={weeklyTargetInput}
+                  onChange={e => setWeeklyTargetInput(Number(e.target.value))}
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-mono font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Target omset kasir per minggu (misal: Rp 10.000.000)
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Target Penjualan Bulanan (Rp)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="100000"
+                  required
+                  value={monthlyTargetInput}
+                  onChange={e => setMonthlyTargetInput(Number(e.target.value))}
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-mono font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Target omset kasir per bulan berjalan (misal: Rp 45.000.000)
+                </p>
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowTargetModal(false)}
+                  className="px-4 py-2 border border-slate-300 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-xs transition"
+                >
+                  Simpan Target
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

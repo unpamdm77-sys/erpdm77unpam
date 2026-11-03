@@ -15,13 +15,16 @@ import {
   FileText
 } from 'lucide-react';
 
+import { SupervisorApprovalModal } from '../auth/SupervisorApprovalModal';
+
 export const HistoryTab: React.FC = () => {
-  const { transactions, refundTransaction, config } = useERP();
+  const { transactions, refundTransaction, config, currentUser } = useERP();
 
   const [search, setSearch] = useState('');
   const [selectedMethod, setSelectedMethod] = useState<string>('Semua');
   const [selectedTransactionForPrint, setSelectedTransactionForPrint] = useState<Transaction | null>(null);
   const [selectedTransactionForDetail, setSelectedTransactionForDetail] = useState<Transaction | null>(null);
+  const [transactionPendingApproval, setTransactionPendingApproval] = useState<Transaction | null>(null);
 
   const filteredTransactions = transactions.filter(t => {
     const q = search.toLowerCase();
@@ -44,7 +47,17 @@ export const HistoryTab: React.FC = () => {
     .reduce((sum, t) => sum + t.grossProfit, 0);
 
   const handleRefund = (trx: Transaction) => {
-    if (confirm(`Apakah Anda yakin ingin membatalkan/void nota ${trx.invoiceNo}? Stok bahan baku akan otomatis dikembalikan ke inventaris.`)) {
+    // If staff, require approval from Supervisor / Owner
+    if (currentUser.role === 'STAFF') {
+      setTransactionPendingApproval(trx);
+      return;
+    }
+
+    if (
+      confirm(
+        `Apakah Anda yakin ingin membatalkan/void nota ${trx.invoiceNo}? Stok bahan baku akan otomatis dikembalikan ke inventaris.`
+      )
+    ) {
       refundTransaction(trx.id);
     }
   };
@@ -308,6 +321,18 @@ export const HistoryTab: React.FC = () => {
           transaction={selectedTransactionForPrint}
           config={config}
           onClose={() => setSelectedTransactionForPrint(null)}
+        />
+      )}
+
+      {/* SUPERVISOR APPROVAL MODAL FOR STAFF REFUND */}
+      {transactionPendingApproval && (
+        <SupervisorApprovalModal
+          transaction={transactionPendingApproval}
+          onApprove={() => {
+            refundTransaction(transactionPendingApproval.id);
+            setTransactionPendingApproval(null);
+          }}
+          onClose={() => setTransactionPendingApproval(null)}
         />
       )}
     </div>

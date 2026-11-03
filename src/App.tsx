@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ERPProvider, useERP } from './context/ERPContext';
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
@@ -11,14 +11,39 @@ import { AdjustmentTab } from './components/adjustment/AdjustmentTab';
 import { FinanceTab } from './components/finance/FinanceTab';
 import { HistoryTab } from './components/history/HistoryTab';
 import { ImportExportTab } from './components/import-export/ImportExportTab';
+import { AccountSettingsTab } from './components/settings/AccountSettingsTab';
 import { GasSyncModal } from './components/settings/GasSyncModal';
 import { VercelDeployModal } from './components/settings/VercelDeployModal';
+import { AccountSettingsModal } from './components/settings/AccountSettingsModal';
+import { AccountSwitcherModal } from './components/auth/AccountSwitcherModal';
+import { LoginPage } from './components/auth/LoginPage';
 
 const AppContent: React.FC = () => {
+  const { currentUser, isAuthenticated } = useERP();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showGasModal, setShowGasModal] = useState(false);
   const [showVercelModal, setShowVercelModal] = useState(false);
+  const [showAccountSettingsModal, setShowAccountSettingsModal] = useState(false);
+  const [showAccountSwitcherModal, setShowAccountSwitcherModal] = useState(false);
+
+  // If user is not authenticated, render the mandatory Login Wall
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
+
+  // Enforce tab access permissions whenever user role or active tab changes
+  useEffect(() => {
+    // Non-owner cannot access settings tab
+    if (currentUser.role !== 'OWNER' && activeTab === 'settings') {
+      setActiveTab('dashboard');
+    }
+    // Staff and supervisor cannot access finance or import tabs
+    const isStaffOrSupervisor = currentUser.role === 'STAFF' || currentUser.role === 'SUPERVISOR';
+    if (isStaffOrSupervisor && (activeTab === 'finance' || activeTab === 'import')) {
+      setActiveTab('dashboard');
+    }
+  }, [currentUser.role, activeTab]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 font-sans text-slate-800 antialiased">
@@ -29,6 +54,8 @@ const AppContent: React.FC = () => {
         isMobileOpen={isMobileMenuOpen}
         onCloseMobile={() => setIsMobileMenuOpen(false)}
         onOpenGoogleSheetSettings={() => setShowGasModal(true)}
+        onOpenAccountSettings={() => setShowAccountSettingsModal(true)}
+        onOpenAccountSwitcher={() => setShowAccountSwitcherModal(true)}
       />
 
       {/* Main Content Area */}
@@ -38,6 +65,7 @@ const AppContent: React.FC = () => {
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
           onOpenGoogleSheetSettings={() => setShowGasModal(true)}
           onOpenVercelGuide={() => setShowVercelModal(true)}
+          onOpenAccountSwitcher={() => setShowAccountSwitcherModal(true)}
           onSwitchTab={setActiveTab}
         />
 
@@ -49,10 +77,15 @@ const AppContent: React.FC = () => {
             {activeTab === 'products' && <ProductsTab />}
             {activeTab === 'materials' && <MaterialsTab onSwitchTab={setActiveTab} />}
             {activeTab === 'adjustment' && <AdjustmentTab />}
-            {activeTab === 'finance' && <FinanceTab />}
+            {activeTab === 'finance' && currentUser.role !== 'STAFF' && currentUser.role !== 'SUPERVISOR' && (
+              <FinanceTab />
+            )}
             {activeTab === 'history' && <HistoryTab />}
-            {activeTab === 'import' && (
+            {activeTab === 'import' && currentUser.role !== 'STAFF' && currentUser.role !== 'SUPERVISOR' && (
               <ImportExportTab onOpenGoogleSheetSettings={() => setShowGasModal(true)} />
+            )}
+            {activeTab === 'settings' && (
+              <AccountSettingsTab onSwitchTab={setActiveTab} />
             )}
           </div>
         </main>
@@ -63,6 +96,19 @@ const AppContent: React.FC = () => {
 
       {/* Vercel Deploy Guide Modal */}
       {showVercelModal && <VercelDeployModal onClose={() => setShowVercelModal(false)} />}
+
+      {/* Account Settings Modal (Exclusive for OWNER) */}
+      {showAccountSettingsModal && (
+        <AccountSettingsModal onClose={() => setShowAccountSettingsModal(false)} />
+      )}
+
+      {/* Account Switcher Modal */}
+      {showAccountSwitcherModal && (
+        <AccountSwitcherModal
+          onClose={() => setShowAccountSwitcherModal(false)}
+          onOpenOwnerSettings={() => setShowAccountSettingsModal(true)}
+        />
+      )}
     </div>
   );
 };

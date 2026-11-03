@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useERP } from '../../context/ERPContext';
 import { Material, UnitType } from '../../types/erp';
 import { formatRupiah, formatNumber, formatDateOnly } from '../../utils/formatters';
+import { CategoryManagerModal } from '../categories/CategoryManagerModal';
 import {
   Boxes,
   Plus,
@@ -11,7 +12,10 @@ import {
   Trash2,
   ShoppingCart,
   TrendingDown,
-  PackageCheck
+  PackageCheck,
+  Tags,
+  Lock,
+  AlertCircle
 } from 'lucide-react';
 
 interface MaterialsTabProps {
@@ -19,10 +23,21 @@ interface MaterialsTabProps {
 }
 
 export const MaterialsTab: React.FC<MaterialsTabProps> = ({ onSwitchTab }) => {
-  const { materials, addMaterial, updateMaterial, deleteMaterial } = useERP();
+  const {
+    materials,
+    addMaterial,
+    updateMaterial,
+    deleteMaterial,
+    materialCategories,
+    currentUser
+  } = useERP();
 
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Semua');
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+
+  // RBAC permissions: Owner & Finance can edit materials; Supervisor & Staff cannot
+  const canEditMaterials = currentUser.role === 'OWNER' || currentUser.role === 'FINANCE';
 
   // Modal states
   const [showModal, setShowModal] = useState(false);
@@ -31,7 +46,7 @@ export const MaterialsTab: React.FC<MaterialsTabProps> = ({ onSwitchTab }) => {
   // Form states
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
-  const [category, setCategory] = useState<Material['category']>('Daging & Isian');
+  const [category, setCategory] = useState<string>(materialCategories[0] || 'Daging & Isian');
   const [stock, setStock] = useState<number | ''>('');
   const [unit, setUnit] = useState<UnitType>('pcs');
   const [minStock, setMinStock] = useState<number | ''>('');
@@ -39,10 +54,11 @@ export const MaterialsTab: React.FC<MaterialsTabProps> = ({ onSwitchTab }) => {
   const [supplier, setSupplier] = useState('');
 
   const handleOpenAdd = () => {
+    if (!canEditMaterials) return;
     setEditingMat(null);
     setCode(`B-${(materials.length + 1).toString().padStart(2, '0')}`);
     setName('');
-    setCategory('Daging & Isian');
+    setCategory(materialCategories[0] || 'Daging & Isian');
     setStock('');
     setUnit('pcs');
     setMinStock(20);
@@ -52,6 +68,7 @@ export const MaterialsTab: React.FC<MaterialsTabProps> = ({ onSwitchTab }) => {
   };
 
   const handleOpenEdit = (m: Material) => {
+    if (!canEditMaterials) return;
     setEditingMat(m);
     setCode(m.code);
     setName(m.name);
@@ -99,7 +116,8 @@ export const MaterialsTab: React.FC<MaterialsTabProps> = ({ onSwitchTab }) => {
   const outOfStockCount = materials.filter(m => m.stock <= 0).length;
 
   const filteredMaterials = materials.filter(m => {
-    const matchesSearch = m.name.toLowerCase().includes(search.toLowerCase()) ||
+    const matchesSearch =
+      m.name.toLowerCase().includes(search.toLowerCase()) ||
       m.code.toLowerCase().includes(search.toLowerCase());
     const matchesCat = selectedCategory === 'Semua' || m.category === selectedCategory;
     return matchesSearch && matchesCat;
@@ -123,14 +141,41 @@ export const MaterialsTab: React.FC<MaterialsTabProps> = ({ onSwitchTab }) => {
           </p>
         </div>
 
-        <button
-          onClick={handleOpenAdd}
-          className="flex items-center space-x-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-sm transition text-xs"
-        >
-          <Plus size={16} />
-          <span>+ Tambah Bahan Baru</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Kelola Kategori Bahan Button */}
+          <button
+            onClick={() => setShowCategoryModal(true)}
+            className="flex items-center space-x-1.5 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition text-xs border border-slate-200"
+          >
+            <Tags size={15} />
+            <span>Kelola Kategori</span>
+          </button>
+
+          {canEditMaterials ? (
+            <button
+              onClick={handleOpenAdd}
+              className="flex items-center space-x-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-xs transition text-xs"
+            >
+              <Plus size={16} />
+              <span>Tambah Bahan Baru</span>
+            </button>
+          ) : (
+            <div className="flex items-center space-x-1.5 px-3.5 py-2.5 bg-slate-100 text-slate-500 rounded-xl text-xs font-semibold border border-slate-200">
+              <Lock size={14} />
+              <span>Mode Lihat ({currentUser.role})</span>
+            </div>
+          )}
+        </div>
       </div>
+
+      {!canEditMaterials && (
+        <div className="p-3.5 bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl text-xs flex items-center gap-2">
+          <AlertCircle size={16} className="text-amber-600 shrink-0" />
+          <span>
+            <strong>Informasi Akses:</strong> Akun Anda berstatus <strong>{currentUser.role}</strong> (Mode Lihat). Supervisor dan Staff tidak dapat menambah, mengedit, atau menghapus master data stok bahan baku.
+          </span>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -141,9 +186,9 @@ export const MaterialsTab: React.FC<MaterialsTabProps> = ({ onSwitchTab }) => {
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-          <p className="text-xs text-slate-500 font-bold uppercase">Total Nilai Aset Stok</p>
-          <h3 className="text-2xl font-black text-slate-900 mt-1">{formatRupiah(totalAssetValue)}</h3>
-          <p className="text-[11px] text-emerald-600 font-medium mt-0.5">Modal terikat bahan</p>
+          <p className="text-xs text-slate-500 font-bold uppercase">Nilai Aset Persediaan</p>
+          <h3 className="text-2xl font-black text-emerald-600 mt-1">{formatRupiah(totalAssetValue)}</h3>
+          <p className="text-[11px] text-slate-400 mt-0.5">Dihitung dari modal beli</p>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
@@ -163,7 +208,7 @@ export const MaterialsTab: React.FC<MaterialsTabProps> = ({ onSwitchTab }) => {
       <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-            {['Semua', 'Daging & Isian', 'Saus & Bumbu', 'Topping & Keju', 'Kemasan & Alat', 'Bahan Minuman'].map(cat => (
+            {['Semua', ...materialCategories].map(cat => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
@@ -193,7 +238,7 @@ export const MaterialsTab: React.FC<MaterialsTabProps> = ({ onSwitchTab }) => {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-slate-200 text-slate-400 font-semibold uppercase text-[10px]">
+              <tr className="border-b border-slate-100 text-slate-400 font-semibold uppercase text-[10px]">
                 <th className="pb-3">Kode</th>
                 <th className="pb-3">Nama Bahan Baku</th>
                 <th className="pb-3">Kategori</th>
@@ -258,24 +303,30 @@ export const MaterialsTab: React.FC<MaterialsTabProps> = ({ onSwitchTab }) => {
                           <ShoppingCart size={14} />
                         </button>
                       )}
-                      <button
-                        title="Edit Bahan"
-                        onClick={() => handleOpenEdit(mat)}
-                        className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition"
-                      >
-                        <Edit2 size={14} />
-                      </button>
-                      <button
-                        title="Hapus Bahan"
-                        onClick={() => {
-                          if (confirm(`Hapus bahan baku "${mat.name}"?`)) {
-                            deleteMaterial(mat.id);
-                          }
-                        }}
-                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-lg transition"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      {canEditMaterials ? (
+                        <>
+                          <button
+                            title="Edit Bahan"
+                            onClick={() => handleOpenEdit(mat)}
+                            className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button
+                            title="Hapus Bahan"
+                            onClick={() => {
+                              if (confirm(`Hapus bahan baku "${mat.name}"?`)) {
+                                deleteMaterial(mat.id);
+                              }
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-lg transition"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </>
+                      ) : (
+                        <span className="text-[10px] text-slate-400 italic">Lihat Saja</span>
+                      )}
                     </td>
                   </tr>
                 );
@@ -285,21 +336,15 @@ export const MaterialsTab: React.FC<MaterialsTabProps> = ({ onSwitchTab }) => {
         </div>
       </div>
 
-      {/* ADD / EDIT MATERIAL MODAL */}
+      {/* Add / Edit Material Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
-            <div className="bg-slate-900 text-white p-5 flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Boxes className="text-amber-400" size={20} />
-                <h3 className="font-bold text-base">
-                  {editingMat ? 'Edit Data Bahan Baku' : 'Tambah Bahan Baku Baru'}
-                </h3>
-              </div>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-white">✕</button>
-            </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full border border-slate-200 p-6 space-y-4">
+            <h3 className="text-lg font-black text-slate-900">
+              {editingMat ? 'Edit Data Bahan Baku' : 'Tambah Bahan Baku Baru'}
+            </h3>
 
-            <form onSubmit={handleSave} className="p-6 space-y-4 text-xs">
+            <form onSubmit={handleSave} className="space-y-4 text-xs">
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Kode</label>
@@ -316,9 +361,9 @@ export const MaterialsTab: React.FC<MaterialsTabProps> = ({ onSwitchTab }) => {
                   <input
                     type="text"
                     required
+                    placeholder="Contoh: Saus Mentai Khas 77"
                     value={name}
                     onChange={e => setName(e.target.value)}
-                    placeholder="Contoh: Saus Mentai Khusus"
                     className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold"
                   />
                 </div>
@@ -329,15 +374,14 @@ export const MaterialsTab: React.FC<MaterialsTabProps> = ({ onSwitchTab }) => {
                   <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Kategori</label>
                   <select
                     value={category}
-                    onChange={e => setCategory(e.target.value as any)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300"
+                    onChange={e => setCategory(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
                   >
-                    <option value="Daging & Isian">Daging & Isian</option>
-                    <option value="Saus & Bumbu">Saus & Bumbu</option>
-                    <option value="Topping & Keju">Topping & Keju</option>
-                    <option value="Kemasan & Alat">Kemasan & Alat</option>
-                    <option value="Bahan Minuman">Bahan Minuman</option>
-                    <option value="Lainnya">Lainnya</option>
+                    {materialCategories.map(cat => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -345,7 +389,7 @@ export const MaterialsTab: React.FC<MaterialsTabProps> = ({ onSwitchTab }) => {
                   <select
                     value={unit}
                     onChange={e => setUnit(e.target.value as any)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold bg-white"
                   >
                     <option value="pcs">pcs (biji / porsi)</option>
                     <option value="gr">gr (gram)</option>
@@ -365,62 +409,76 @@ export const MaterialsTab: React.FC<MaterialsTabProps> = ({ onSwitchTab }) => {
                   <input
                     type="number"
                     min="0"
+                    step="any"
+                    required
                     value={stock}
                     onChange={e => setStock(e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold text-slate-900"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Batas Minimum</label>
+                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Batas Min</label>
                   <input
                     type="number"
                     min="0"
+                    step="any"
+                    required
                     value={minStock}
                     onChange={e => setMinStock(e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold text-rose-600"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Harga Beli Satuan (Rp)</label>
+                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Biaya Satuan</label>
                   <input
                     type="number"
                     min="0"
+                    step="any"
+                    required
                     value={costPerUnit}
                     onChange={e => setCostPerUnit(e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold text-slate-900"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold text-emerald-600"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Nama Supplier Langganan</label>
+                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Supplier Utama</label>
                 <input
                   type="text"
+                  placeholder="Nama toko / pasar / langganan"
                   value={supplier}
                   onChange={e => setSupplier(e.target.value)}
-                  placeholder="Contoh: Toko Plastik Makmur UNPAM"
                   className="w-full px-3 py-2 rounded-xl border border-slate-300"
                 />
               </div>
 
-              <div className="flex gap-2 pt-3">
+              <div className="flex justify-end space-x-2 pt-2 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl"
+                  className="px-4 py-2 border border-slate-300 rounded-xl font-semibold text-slate-600 hover:bg-slate-100"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl shadow-md transition"
+                  className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-xs"
                 >
-                  Simpan Bahan Baku
+                  Simpan Bahan
                 </button>
               </div>
             </form>
           </div>
         </div>
+      )}
+
+      {/* Category Manager Modal */}
+      {showCategoryModal && (
+        <CategoryManagerModal
+          defaultTab="material"
+          onClose={() => setShowCategoryModal(false)}
+        />
       )}
     </div>
   );

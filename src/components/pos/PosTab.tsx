@@ -30,16 +30,6 @@ import {
   ShieldCheck
 } from 'lucide-react';
 
-const CATEGORIES = [
-  'Semua',
-  'Dimsum Mentai',
-  'Dimsum Goreng',
-  'Dimsum Kukus',
-  'Minuman',
-  'Frozen Pack',
-  'Extra Topping'
-];
-
 const PEDAS_OPTIONS = ['Normal', 'Pedas Sedang', 'Extra Pedas'];
 const TORCH_OPTIONS = ['Normal Melt', 'Extra Gosong Wangi', 'Tanpa Torch (Dingin)'];
 
@@ -53,6 +43,7 @@ const QUICK_TOPPINGS = [
 export const PosTab: React.FC = () => {
   const {
     menuItems,
+    menuCategories,
     cart,
     addToCart,
     updateCartQty,
@@ -250,7 +241,7 @@ export const PosTab: React.FC = () => {
 
         {/* Category Pills */}
         <div className="flex items-center space-x-2 py-2.5 overflow-x-auto no-scrollbar shrink-0">
-          {CATEGORIES.map(cat => (
+          {['Semua', ...menuCategories].map(cat => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}

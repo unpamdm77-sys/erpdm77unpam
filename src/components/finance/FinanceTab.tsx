@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useERP } from '../../context/ERPContext';
 import { Expense } from '../../types/erp';
-import { formatRupiah, formatNumber, formatDateOnly } from '../../utils/formatters';
+import { formatRupiah, formatDateOnly } from '../../utils/formatters';
 import {
   Wallet,
   Plus,
@@ -12,7 +12,9 @@ import {
   PieChart,
   Calendar,
   CheckCircle2,
-  Receipt
+  Receipt,
+  Search,
+  Filter
 } from 'lucide-react';
 
 export const FinanceTab: React.FC = () => {
@@ -20,6 +22,8 @@ export const FinanceTab: React.FC = () => {
 
   const [dateFilter, setDateFilter] = useState<'today' | '7days' | 'month' | 'all'>('month');
   const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);
+  const [expenseSearch, setExpenseSearch] = useState('');
+  const [selectedExpenseCategory, setSelectedExpenseCategory] = useState('Semua');
 
   // Form states
   const [expenseName, setExpenseName] = useState('');
@@ -268,58 +272,108 @@ export const FinanceTab: React.FC = () => {
               </div>
               <button
                 onClick={() => setShowAddExpenseModal(true)}
-                className="text-xs font-bold text-amber-600 hover:text-amber-700"
+                className="text-xs font-bold text-amber-600 hover:text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 transition"
               >
-                + Tambah
+                + Tambah Beban
               </button>
             </div>
 
-            <div className="overflow-y-auto max-h-[380px] space-y-2 pt-2 pr-1">
-              {filteredExpenses.length === 0 ? (
+            {/* Expense Search & Category Filter */}
+            <div className="pt-2 flex flex-col sm:flex-row gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2 text-slate-400" size={14} />
+                <input
+                  type="text"
+                  placeholder="Cari beban (contoh: gas, listrik, sewa)..."
+                  value={expenseSearch}
+                  onChange={e => setExpenseSearch(e.target.value)}
+                  className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                />
+              </div>
+
+              <select
+                value={selectedExpenseCategory}
+                onChange={e => setSelectedExpenseCategory(e.target.value)}
+                className="text-xs px-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 font-medium text-slate-700 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              >
+                <option value="Semua">Semua Kategori</option>
+                <option value="Gas LPG">Gas LPG</option>
+                <option value="Operasional">Operasional</option>
+                <option value="Sewa Tempat">Sewa Tempat</option>
+                <option value="Listrik & Air">Listrik & Air</option>
+                <option value="Gaji Pegawai">Gaji Pegawai</option>
+                <option value="Kebersihan">Kebersihan</option>
+                <option value="Marketing">Marketing</option>
+                <option value="Lainnya">Lainnya</option>
+              </select>
+            </div>
+
+            <div className="overflow-y-auto max-h-[340px] space-y-2 pt-2 pr-1">
+              {filteredExpenses
+                .filter(e => {
+                  const q = expenseSearch.toLowerCase();
+                  const matchesSearch =
+                    e.name.toLowerCase().includes(q) ||
+                    (e.notes && e.notes.toLowerCase().includes(q)) ||
+                    e.expenseNo.toLowerCase().includes(q);
+                  const matchesCat = selectedExpenseCategory === 'Semua' || e.category === selectedExpenseCategory;
+                  return matchesSearch && matchesCat;
+                })
+                .length === 0 ? (
                 <div className="text-center py-10 text-slate-400 text-xs">
-                  Tidak ada catatan pengeluaran beban pada periode ini.
+                  {expenseSearch ? 'Tidak ada beban operasional yang cocok dengan pencarian.' : 'Tidak ada catatan pengeluaran beban pada periode ini.'}
                 </div>
               ) : (
-                filteredExpenses.map(exp => (
-                  <div
-                    key={exp.id}
-                    className="p-3 bg-slate-50 rounded-2xl border border-slate-100 hover:border-slate-200 transition flex items-center justify-between text-xs"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-900">{exp.name}</span>
-                        <span className="text-[10px] px-2 py-0.5 bg-slate-200 text-slate-700 font-semibold rounded-md">
-                          {exp.category}
-                        </span>
+                filteredExpenses
+                  .filter(e => {
+                    const q = expenseSearch.toLowerCase();
+                    const matchesSearch =
+                      e.name.toLowerCase().includes(q) ||
+                      (e.notes && e.notes.toLowerCase().includes(q)) ||
+                      e.expenseNo.toLowerCase().includes(q);
+                    const matchesCat = selectedExpenseCategory === 'Semua' || e.category === selectedExpenseCategory;
+                    return matchesSearch && matchesCat;
+                  })
+                  .map(exp => (
+                    <div
+                      key={exp.id}
+                      className="p-3 bg-slate-50 rounded-2xl border border-slate-100 hover:border-slate-200 transition flex items-center justify-between text-xs"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-900">{exp.name}</span>
+                          <span className="text-[10px] px-2 py-0.5 bg-slate-200 text-slate-700 font-semibold rounded-md">
+                            {exp.category}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          {formatDateOnly(exp.date)} {exp.notes ? `• ${exp.notes}` : ''}
+                        </p>
                       </div>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
-                        {formatDateOnly(exp.date)} {exp.notes ? `• ${exp.notes}` : ''}
-                      </p>
-                    </div>
 
-                    <div className="flex items-center space-x-3">
-                      <span className="font-black text-rose-600 text-sm">
-                        -{formatRupiah(exp.amount)}
-                      </span>
-                      <button
-                        onClick={() => {
-                          if (confirm(`Hapus pengeluaran "${exp.name}"?`)) {
-                            deleteExpense(exp.id);
-                          }
-                        }}
-                        className="text-slate-300 hover:text-rose-600 p-1"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      <div className="flex items-center space-x-3">
+                        <span className="font-black text-rose-600 text-sm">
+                          -{formatRupiah(exp.amount)}
+                        </span>
+                        <button
+                          onClick={() => {
+                            if (confirm(`Hapus pengeluaran "${exp.name}"?`)) {
+                              deleteExpense(exp.id);
+                            }
+                          }}
+                          className="text-slate-300 hover:text-rose-600 p-1"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  ))
               )}
             </div>
           </div>
 
           <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 flex items-center justify-between text-xs mt-4">
-            <span className="font-bold text-slate-700">Total Pengeluaran Beban:</span>
+            <span className="font-bold text-slate-700">Total Pengeluaran Beban Periode:</span>
             <span className="font-black text-rose-600 text-sm">
               {formatRupiah(totalOperatingExpenses)}
             </span>

@@ -4,7 +4,7 @@ export interface Material {
   id: string;
   code: string;
   name: string;
-  category: 'Daging & Isian' | 'Saus & Bumbu' | 'Topping & Keju' | 'Kemasan & Alat' | 'Bahan Minuman' | 'Lainnya';
+  category: string;
   stock: number;
   unit: UnitType;
   minStock: number;
@@ -22,7 +22,7 @@ export interface MenuItem {
   id: string;
   code: string;
   name: string;
-  category: 'Dimsum Mentai' | 'Dimsum Goreng' | 'Dimsum Kukus' | 'Minuman' | 'Frozen Pack' | 'Extra Topping';
+  category: string;
   price: number;
   description: string;
   recipe: RecipeIngredient[];
@@ -137,6 +137,26 @@ export interface ShiftSummary {
   debitSales: number;
   totalHpp: number;
   grossProfit: number;
+}
+
+export interface SalesTarget {
+  daily: number;
+  weekly: number;
+  monthly: number;
+}
+
+export type UserRole = 'OWNER' | 'SUPERVISOR' | 'FINANCE' | 'STAFF';
+
+export interface UserAccount {
+  id: string;
+  username: string;
+  password: string;
+  name: string;
+  role: UserRole;
+  phone: string;
+  address: string;
+  joinDate: string;
+  isActive: boolean;
 }
 
 export interface ERPConfig {

@@ -9,11 +9,12 @@ import {
   Search,
   CheckCircle2,
   TrendingDown,
-  RotateCcw
+  RotateCcw,
+  Trash2
 } from 'lucide-react';
 
 export const AdjustmentTab: React.FC = () => {
-  const { materials, adjustments, addAdjustment, config } = useERP();
+  const { materials, adjustments, addAdjustment, deleteAdjustment, config, currentUser } = useERP();
 
   const [showModal, setShowModal] = useState(false);
   const [selectedMaterialId, setSelectedMaterialId] = useState(materials[0]?.id || '');
@@ -143,12 +144,13 @@ export const AdjustmentTab: React.FC = () => {
                 <th className="pb-3">Alasan / Kategori</th>
                 <th className="pb-3 text-right">Estimasi Nilai</th>
                 <th className="pb-3 text-right">Petugas</th>
+                <th className="pb-3 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredAdjustments.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-slate-400 text-xs">
+                  <td colSpan={9} className="py-8 text-center text-slate-400 text-xs">
                     Belum ada riwayat penyesuaian stok opname.
                   </td>
                 </tr>
@@ -177,6 +179,22 @@ export const AdjustmentTab: React.FC = () => {
                       {adj.lossCost > 0 ? `-${formatRupiah(adj.lossCost)}` : '-'}
                     </td>
                     <td className="py-3 text-right text-slate-500">{adj.adjustedBy}</td>
+                    <td className="py-3 text-right">
+                      <button
+                        title="Hapus Penyesuaian Stok Ini"
+                        onClick={() => {
+                          const confirmDelete = confirm(
+                            `Apakah Anda ingin menghapus catatan penyesuaian stok "${adj.materialName}"?\n\n- Klik "OK" untuk menghapus riwayat DAN mengembalikan stok bahan ke kondisi sebelum penyesuaian.\n- Klik "Cancel" untuk membatalkan.`
+                          );
+                          if (confirmDelete) {
+                            deleteAdjustment(adj.id, true);
+                          }
+                        }}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
