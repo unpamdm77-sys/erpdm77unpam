@@ -1,0 +1,6 @@
+{
+  "name": "ERP & POS - DIMSUM MENTAI 77 UNPAM",
+  "description": "Sistem ERP & POS Terintegrasi untuk Dimsum Mentai 77 UNPAM: Kasir POS, Manajemen Bahan Baku, HPP/BOM Resep, Purchasing, Stock Adjustment, dan Laporan Keuangan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
