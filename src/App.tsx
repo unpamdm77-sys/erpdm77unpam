@@ -12,6 +12,7 @@ import { FinanceTab } from './components/finance/FinanceTab';
 import { HistoryTab } from './components/history/HistoryTab';
 import { ImportExportTab } from './components/import-export/ImportExportTab';
 import { AccountSettingsTab } from './components/settings/AccountSettingsTab';
+import { GoogleSheetsConnectModal } from './components/google/GoogleSheetsConnectModal';
 import { GasSyncModal } from './components/settings/GasSyncModal';
 import { VercelDeployModal } from './components/settings/VercelDeployModal';
 import { AccountSettingsModal } from './components/settings/AccountSettingsModal';
@@ -91,8 +92,8 @@ const AppContent: React.FC = () => {
         </main>
       </div>
 
-      {/* Google Sheets Modal */}
-      {showGasModal && <GasSyncModal onClose={() => setShowGasModal(false)} />}
+      {/* Google Sheets Realtime Database Modal */}
+      {showGasModal && <GoogleSheetsConnectModal onClose={() => setShowGasModal(false)} />}
 
       {/* Vercel Deploy Guide Modal */}
       {showVercelModal && <VercelDeployModal onClose={() => setShowVercelModal(false)} />}

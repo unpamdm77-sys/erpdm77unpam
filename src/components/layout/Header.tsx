@@ -33,7 +33,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAccountSwitcher,
   onSwitchTab,
 }) => {
-  const { materials, cart, currentUser, logout } = useERP();
+  const { materials, cart, currentUser, logout, config, cloudSyncStatus, lastCloudSyncTime } = useERP();
+  const isSheetConfigured = Boolean(config.googleWebAppUrl && config.googleWebAppUrl.trim().length > 0);
   const lowStockCount = materials.filter(m => m.stock <= m.minStock).length;
 
   const getRoleBadge = (r: UserRole) => {
@@ -109,13 +110,26 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         )}
 
-        {/* Google Sheets Trigger */}
+        {/* Google Sheets Live Database Indicator */}
         <button
           onClick={onOpenGoogleSheetSettings}
-          title="Pengaturan Google Sheets"
-          className="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition border border-slate-200"
+          title={isSheetConfigured ? `Cloud Database Terhubung (${lastCloudSyncTime || 'Real-Time'}). Klik untuk pengaturan atau tarik data.` : 'Hubungkan Google Sheets sebagai Database Real-Time'}
+          className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition border cursor-pointer ${
+            cloudSyncStatus === 'connected'
+              ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
+              : cloudSyncStatus === 'syncing'
+              ? 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
+              : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+          }`}
         >
-          <Cloud size={16} />
+          <Cloud size={14} className={cloudSyncStatus === 'connected' ? 'text-emerald-600' : cloudSyncStatus === 'syncing' ? 'text-amber-500 animate-spin' : 'text-slate-400'} />
+          <span className="hidden md:inline text-[11px]">
+            {cloudSyncStatus === 'connected' ? (lastCloudSyncTime ? `Live Sheet (${lastCloudSyncTime})` : 'Live Sheet') :
+             cloudSyncStatus === 'syncing' ? 'Menyinkronkan...' : 'Konek Sheet'}
+          </span>
+          {cloudSyncStatus === 'connected' && (
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          )}
         </button>
 
         {/* Fast POS Switch if not on POS tab */}

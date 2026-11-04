@@ -50,17 +50,6 @@ export const AccountSwitcherModal: React.FC<AccountSwitcherModalProps> = ({
     }
   };
 
-  const handleQuickSwitch = (user: UserAccount) => {
-    // Quick demo switch
-    const success = login(user.username, user.password);
-    if (success) {
-      setSuccessMsg(`Beralih ke akun ${user.name}`);
-      setTimeout(() => {
-        onClose();
-      }, 500);
-    }
-  };
-
   const getRoleBadge = (r: UserRole) => {
     switch (r) {
       case 'OWNER':
@@ -158,15 +147,7 @@ export const AccountSwitcherModal: React.FC<AccountSwitcherModalProps> = ({
                       {isCurrent ? (
                         <span className="text-amber-700 font-bold">Sedang Aktif</span>
                       ) : (
-                        <span
-                          onClick={e => {
-                            e.stopPropagation();
-                            handleQuickSwitch(u);
-                          }}
-                          className="text-amber-600 font-bold underline hover:text-amber-700"
-                        >
-                          Login Cepat &rarr;
-                        </span>
+                        <span className="text-slate-400 font-medium">Klik untuk pilih &rarr;</span>
                       )}
                     </div>
                   </button>

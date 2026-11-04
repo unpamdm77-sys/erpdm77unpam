@@ -121,8 +121,12 @@ interface ERPContextType {
   // History & Refund
   refundTransaction: (transactionId: string) => void;
 
-  // Google Sheets Sync
-  syncWithGoogleSheet: (action: 'ADD_TRANSACTION' | 'ADD_PURCHASE' | 'ADD_EXPENSE', data: any) => Promise<{ success: boolean; message: string }>;
+  // Google Sheets Cloud Real-time Database
+  cloudSyncStatus: 'connected' | 'syncing' | 'offline' | 'error';
+  lastCloudSyncTime: string | null;
+  pullFromGoogleSheet: (silent?: boolean) => Promise<{ success: boolean; message: string; count?: number }>;
+  seedAllToGoogleSheet: () => Promise<{ success: boolean; message: string }>;
+  syncWithGoogleSheet: (action: string, data: any) => Promise<{ success: boolean; message: string }>;
   syncAllToGoogleSheet: () => Promise<{ successCount: number; failCount: number }>;
 
   // Parked Orders (Hold & Recall)
@@ -232,6 +236,14 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const saved = localStorage.getItem(STORAGE_KEYS.CONFIG);
     return saved ? { ...INITIAL_CONFIG, ...JSON.parse(saved) } : INITIAL_CONFIG;
   });
+
+  // Cloud Real-Time Database Sync States
+  const [cloudSyncStatus, setCloudSyncStatus] = useState<'connected' | 'syncing' | 'offline' | 'error'>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.CONFIG);
+    const parsed = saved ? JSON.parse(saved) : null;
+    return parsed?.googleWebAppUrl && parsed.googleWebAppUrl.trim().startsWith('http') ? 'connected' : 'offline';
+  });
+  const [lastCloudSyncTime, setLastCloudSyncTime] = useState<string | null>(null);
 
   // Active POS Cart State
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -382,20 +394,19 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setDiscount(0);
   };
 
-  // Google Sheets Apps Script Webhook Integration
-  const syncWithGoogleSheet = async (action: 'ADD_TRANSACTION' | 'ADD_PURCHASE' | 'ADD_EXPENSE', data: any): Promise<{ success: boolean; message: string }> => {
+  // Google Sheets Apps Script Real-Time Cloud Database Integration
+  const syncWithGoogleSheet = async (action: string, data: any): Promise<{ success: boolean; message: string }> => {
     if (!config.googleWebAppUrl || !config.googleWebAppUrl.trim().startsWith('http')) {
       return { success: false, message: 'URL Google Apps Script belum diisi di Pengaturan.' };
     }
 
     try {
-      // Sends payload matching the user's processERPAction Google Apps Script engine
       const payload = {
         action,
-        data
+        data,
+        timestamp: new Date().toISOString()
       };
 
-      // In browser to Google Apps Script Web App, mode: 'no-cors' is typically used for direct execution without preflight issues
       await fetch(config.googleWebAppUrl, {
         method: 'POST',
         mode: 'no-cors',
@@ -405,12 +416,169 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         body: JSON.stringify(payload)
       });
 
-      return { status: 'SUCCESS', success: true, message: 'Terkirim ke Google Sheet!' } as any;
+      setCloudSyncStatus('connected');
+      const nowStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      setLastCloudSyncTime(nowStr);
+      return { success: true, message: 'Terkirim ke Google Sheet secara real-time!' };
     } catch (err: any) {
       console.warn('Google Sheets sync notice:', err);
+      setCloudSyncStatus('error');
       return { success: false, message: err?.message || 'Gagal mengirim ke Google Apps Script.' };
     }
   };
+
+  // Pull all live data from Google Sheets (Multi-Device Sync)
+  const pullFromGoogleSheet = async (silent = false): Promise<{ success: boolean; message: string; count?: number }> => {
+    if (!config.googleWebAppUrl || !config.googleWebAppUrl.trim().startsWith('http')) {
+      setCloudSyncStatus('offline');
+      return { success: false, message: 'URL Google Apps Script belum diatur.' };
+    }
+    if (!silent) setCloudSyncStatus('syncing');
+
+    try {
+      const baseUrl = config.googleWebAppUrl.trim();
+      const separator = baseUrl.includes('?') ? '&' : '?';
+      const fetchUrl = `${baseUrl}${separator}action=GET_ALL&_t=${Date.now()}`;
+
+      const res = await fetch(fetchUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        }
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP status: ${res.status}`);
+      }
+
+      const json = await res.json();
+      if (json && json.status === 'SUCCESS' && json.data) {
+        const d = json.data;
+
+        // Safely update states if arrays are returned from Google Sheets
+        if (Array.isArray(d.materials) && d.materials.length > 0) {
+          setMaterials(d.materials);
+        }
+        if (Array.isArray(d.menuItems) && d.menuItems.length > 0) {
+          setMenuItems(d.menuItems);
+        }
+        if (Array.isArray(d.transactions)) {
+          setTransactions(d.transactions);
+        }
+        if (Array.isArray(d.purchases)) {
+          setPurchases(d.purchases);
+        }
+        if (Array.isArray(d.expenses)) {
+          setExpenses(d.expenses);
+        }
+        if (Array.isArray(d.adjustments)) {
+          setAdjustments(d.adjustments);
+        }
+        if (Array.isArray(d.users) && d.users.length > 0) {
+          setUsers(d.users);
+        }
+        if (d.salesTargets && typeof d.salesTargets === 'object' && d.salesTargets.daily) {
+          setSalesTargets(d.salesTargets);
+        }
+        if (Array.isArray(d.menuCategories) && d.menuCategories.length > 0) {
+          setMenuCategories(d.menuCategories);
+        }
+        if (Array.isArray(d.materialCategories) && d.materialCategories.length > 0) {
+          setMaterialCategories(d.materialCategories);
+        }
+
+        setCloudSyncStatus('connected');
+        const nowStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        setLastCloudSyncTime(nowStr);
+
+        const totalItems = (d.transactions?.length || 0) + (d.materials?.length || 0);
+        return {
+          success: true,
+          message: 'Data real-time berhasil disinkronkan dari Google Sheets!',
+          count: totalItems
+        };
+      } else {
+        throw new Error(json?.message || 'Format respon Google Apps Script tidak sesuai.');
+      }
+    } catch (err: any) {
+      console.warn('Pull Google Sheets warning:', err);
+      if (!silent) setCloudSyncStatus('error');
+      return { success: false, message: err?.message || 'Gagal menyinkronkan data dari Google Sheet.' };
+    }
+  };
+
+  // Seed / Push whole system data to Google Sheet (One-Click Setup)
+  const seedAllToGoogleSheet = async (): Promise<{ success: boolean; message: string }> => {
+    if (!config.googleWebAppUrl || !config.googleWebAppUrl.trim().startsWith('http')) {
+      return { success: false, message: 'URL Google Apps Script belum diisi di Pengaturan.' };
+    }
+
+    setCloudSyncStatus('syncing');
+    try {
+      const fullState = {
+        materials,
+        menuItems,
+        transactions,
+        purchases,
+        expenses,
+        adjustments,
+        users,
+        salesTargets,
+        menuCategories,
+        materialCategories
+      };
+
+      await fetch(config.googleWebAppUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'SEED_ALL_DATA',
+          data: fullState,
+          timestamp: new Date().toISOString()
+        })
+      });
+
+      setCloudSyncStatus('connected');
+      const nowStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      setLastCloudSyncTime(nowStr);
+      return { success: true, message: 'Semua database awal berhasil dikirim ke Google Sheets!' };
+    } catch (err: any) {
+      setCloudSyncStatus('error');
+      return { success: false, message: err?.message || 'Gagal mengunggah data awal ke Google Sheet.' };
+    }
+  };
+
+  // Background Polling for Multi-Device Real-Time Sync
+  useEffect(() => {
+    if (!config.googleWebAppUrl || !config.googleWebAppUrl.trim().startsWith('http')) {
+      setCloudSyncStatus('offline');
+      return;
+    }
+
+    // Pull on initial load
+    pullFromGoogleSheet(true);
+
+    // Periodic live pull every 20 seconds when tab is active
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        pullFromGoogleSheet(true);
+      }
+    }, 20000);
+
+    // Pull whenever user returns to window / tab
+    const handleFocus = () => {
+      pullFromGoogleSheet(true);
+    };
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [config.googleWebAppUrl]);
 
   // Complete checkout & BOM stock deduction
   const processCheckout = async (
@@ -1144,6 +1312,10 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addAdjustment,
         deleteAdjustment,
         refundTransaction,
+        cloudSyncStatus,
+        lastCloudSyncTime,
+        pullFromGoogleSheet,
+        seedAllToGoogleSheet,
         syncWithGoogleSheet,
         syncAllToGoogleSheet,
         importMaterialsBatch,
