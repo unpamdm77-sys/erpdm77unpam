@@ -53,7 +53,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenAccountSettings,
   onOpenAccountSwitcher
 }) => {
-  const { config, transactions, currentUser, logout, cloudSyncStatus, lastCloudSyncTime } = useERP();
+  const {
+    config,
+    transactions,
+    currentUser,
+    logout,
+    cloudSyncStatus,
+    lastCloudSyncTime,
+    isGoogleConnected,
+    isSyncing,
+    lastSyncTime
+  } = useERP();
   const isSheetConfigured = Boolean(config.googleWebAppUrl && config.googleWebAppUrl.trim().length > 0);
   const pendingCount = transactions.filter(t => !t.syncedToGoogleSheet).length;
 
@@ -200,19 +210,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
           className="w-full p-2.5 rounded-xl bg-slate-800/50 hover:bg-slate-800 text-slate-300 text-left text-[11px] flex items-center justify-between transition border border-slate-800 cursor-pointer"
         >
           <div className="flex items-center space-x-2 min-w-0">
-            <Cloud size={13} className={cloudSyncStatus === 'connected' ? 'text-emerald-400' : cloudSyncStatus === 'syncing' ? 'text-amber-400 animate-spin' : 'text-slate-400'} />
+            <Cloud
+              size={13}
+              className={
+                isGoogleConnected || cloudSyncStatus === 'connected'
+                  ? 'text-emerald-400'
+                  : isSyncing || cloudSyncStatus === 'syncing'
+                  ? 'text-amber-400 animate-spin'
+                  : 'text-slate-400'
+              }
+            />
             <span className="truncate text-[10px]">
-              {cloudSyncStatus === 'connected' ? (lastCloudSyncTime ? `Sheet (${lastCloudSyncTime})` : 'Cloud Sheet Live') : 'Database Sheet'}
+              {isGoogleConnected
+                ? (lastSyncTime ? `Drive (${lastSyncTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })})` : 'Google Drive')
+                : cloudSyncStatus === 'connected'
+                ? (lastCloudSyncTime ? `Sheet (${lastCloudSyncTime})` : 'Cloud Sheet Live')
+                : 'Database Sheet'}
             </span>
           </div>
           <span
             className={`px-1.5 py-0.5 rounded text-[8px] font-bold shrink-0 ${
-              cloudSyncStatus === 'connected' ? 'bg-emerald-500/20 text-emerald-300' :
-              cloudSyncStatus === 'syncing' ? 'bg-amber-500/20 text-amber-300' :
-              'bg-slate-700 text-slate-400'
+              isGoogleConnected || cloudSyncStatus === 'connected'
+                ? 'bg-emerald-500/20 text-emerald-300'
+                : isSyncing || cloudSyncStatus === 'syncing'
+                ? 'bg-amber-500/20 text-amber-300'
+                : 'bg-slate-700 text-slate-400'
             }`}
           >
-            {cloudSyncStatus === 'connected' ? 'Real-Time' : isSheetConfigured ? 'Konek' : 'Offline'}
+            {isGoogleConnected ? 'Terkoneksi' : cloudSyncStatus === 'connected' ? 'Real-Time' : isSheetConfigured ? 'Konek' : 'Offline'}
           </span>
         </button>
 

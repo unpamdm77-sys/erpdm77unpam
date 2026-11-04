@@ -30,6 +30,26 @@ import {
   DEFAULT_MATERIAL_CATEGORIES
 } from '../data/initialData';
 import { posSound } from '../utils/formatters';
+import { User as FirebaseUser } from 'firebase/auth';
+import {
+  initGoogleAuth,
+  googleSignIn,
+  googleSignOut,
+  getGoogleAccessToken
+} from '../services/googleAuth';
+import {
+  findErpSpreadsheetOnDrive,
+  createErpSpreadsheetOnDrive,
+  fetchAllErpDataFromSheets,
+  appendTransactionToSheet,
+  appendPurchaseToSheet,
+  appendExpenseToSheet,
+  appendAdjustmentToSheet,
+  syncMaterialsToSheet,
+  syncUsersToSheet,
+  pushEntireDatabaseToSheets,
+  initializeTableHeaders
+} from '../services/googleSheetsDb';
 
 interface ERPContextType {
   materials: Material[];
@@ -121,7 +141,23 @@ interface ERPContextType {
   // History & Refund
   refundTransaction: (transactionId: string) => void;
 
-  // Google Sheets Cloud Real-time Database
+  // Google Sheets Workspace Realtime Database (1-Click Google Drive Sync)
+  googleUser: FirebaseUser | null;
+  isGoogleConnected: boolean;
+  spreadsheetId: string | null;
+  spreadsheetUrl: string | null;
+  isSyncing: boolean;
+  lastSyncTime: Date | null;
+  syncError: string | null;
+  autoSyncEnabled: boolean;
+  setAutoSyncEnabled: (enabled: boolean) => void;
+  connectGoogleDatabase: () => Promise<{ success: boolean; message: string }>;
+  disconnectGoogleDatabase: () => Promise<void>;
+  syncFromGoogleSheets: () => Promise<{ success: boolean; message: string }>;
+  syncToGoogleSheets: () => Promise<{ success: boolean; message: string }>;
+  setCustomSpreadsheetId: (idOrUrl: string) => Promise<{ success: boolean; message: string }>;
+
+  // Google Sheets Apps Script Real-time Database
   cloudSyncStatus: 'connected' | 'syncing' | 'offline' | 'error';
   lastCloudSyncTime: string | null;
   pullFromGoogleSheet: (silent?: boolean) => Promise<{ success: boolean; message: string; count?: number }>;
@@ -163,6 +199,9 @@ const STORAGE_KEYS = {
   MENU_CATS: 'dimsum77_menu_cats_v1',
   MATERIAL_CATS: 'dimsum77_material_cats_v1',
   IS_AUTHENTICATED: 'dimsum77_auth_state_v1',
+  GOOGLE_SHEET_ID: 'dimsum77_google_sheet_id_v1',
+  GOOGLE_SHEET_URL: 'dimsum77_google_sheet_url_v1',
+  GOOGLE_AUTO_SYNC: 'dimsum77_google_auto_sync_v1',
 };
 
 export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -244,6 +283,23 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return parsed?.googleWebAppUrl && parsed.googleWebAppUrl.trim().startsWith('http') ? 'connected' : 'offline';
   });
   const [lastCloudSyncTime, setLastCloudSyncTime] = useState<string | null>(null);
+
+  // Google Sheets Workspace Real-Time Database States (Direct Google Drive Integration)
+  const [googleUser, setGoogleUser] = useState<FirebaseUser | null>(null);
+  const [isGoogleConnected, setIsGoogleConnected] = useState<boolean>(false);
+  const [spreadsheetId, setSpreadsheetId] = useState<string | null>(() => {
+    return localStorage.getItem(STORAGE_KEYS.GOOGLE_SHEET_ID) || null;
+  });
+  const [spreadsheetUrl, setSpreadsheetUrl] = useState<string | null>(() => {
+    return localStorage.getItem(STORAGE_KEYS.GOOGLE_SHEET_URL) || null;
+  });
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState<boolean>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.GOOGLE_AUTO_SYNC);
+    return saved !== null ? saved === 'true' : true;
+  });
 
   // Active POS Cart State
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -580,6 +636,257 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, [config.googleWebAppUrl]);
 
+  // Google Workspace Auth Listener on Mount
+  useEffect(() => {
+    const unsubscribe = initGoogleAuth(
+      (user, token) => {
+        setGoogleUser(user);
+        setIsGoogleConnected(true);
+        setSyncError(null);
+      },
+      () => {
+        setGoogleUser(null);
+        setIsGoogleConnected(false);
+      }
+    );
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
+
+  // Save Spreadsheet ID & AutoSync to localStorage
+  useEffect(() => {
+    if (spreadsheetId) {
+      localStorage.setItem(STORAGE_KEYS.GOOGLE_SHEET_ID, spreadsheetId);
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.GOOGLE_SHEET_ID);
+    }
+  }, [spreadsheetId]);
+
+  useEffect(() => {
+    if (spreadsheetUrl) {
+      localStorage.setItem(STORAGE_KEYS.GOOGLE_SHEET_URL, spreadsheetUrl);
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.GOOGLE_SHEET_URL);
+    }
+  }, [spreadsheetUrl]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.GOOGLE_AUTO_SYNC, String(autoSyncEnabled));
+  }, [autoSyncEnabled]);
+
+  // Connect Google Database: Sign in with Google, locate/create Spreadsheet, and pull data
+  const connectGoogleDatabase = async (): Promise<{ success: boolean; message: string }> => {
+    setIsSyncing(true);
+    setSyncError(null);
+    try {
+      const authResult = await googleSignIn();
+      const user = authResult.user;
+      const accessToken = authResult.accessToken;
+      setGoogleUser(user);
+      setIsGoogleConnected(true);
+
+      // Search for existing Dimsum Mentai 77 spreadsheet on Google Drive
+      let targetId = spreadsheetId;
+      let targetUrl = spreadsheetUrl;
+
+      if (!targetId) {
+        const found = await findErpSpreadsheetOnDrive(accessToken);
+        if (found) {
+          targetId = found.id;
+          targetUrl = found.url;
+        } else {
+          // Create new dedicated spreadsheet on Google Drive
+          const created = await createErpSpreadsheetOnDrive(accessToken);
+          targetId = created.id;
+          targetUrl = created.url;
+
+          // Seed entire initial database into the newly created spreadsheet
+          await pushEntireDatabaseToSheets(targetId, accessToken, {
+            materials,
+            menuItems,
+            transactions,
+            purchases,
+            expenses,
+            adjustments,
+            users
+          });
+        }
+      }
+
+      setSpreadsheetId(targetId);
+      setSpreadsheetUrl(targetUrl);
+
+      // Fetch live data from sheets
+      if (targetId) {
+        const cloudData = await fetchAllErpDataFromSheets(targetId, accessToken);
+        if (cloudData.materials.length > 0) setMaterials(cloudData.materials);
+        if (cloudData.menuItems.length > 0) setMenuItems(cloudData.menuItems);
+        if (cloudData.transactions.length > 0) setTransactions(cloudData.transactions);
+        if (cloudData.purchases.length > 0) setPurchases(cloudData.purchases);
+        if (cloudData.expenses.length > 0) setExpenses(cloudData.expenses);
+        if (cloudData.adjustments.length > 0) setAdjustments(cloudData.adjustments);
+        if (cloudData.users.length > 0) setUsers(cloudData.users);
+      }
+
+      setLastSyncTime(new Date());
+      setIsSyncing(false);
+      return {
+        success: true,
+        message: `Terhubung ke Google Drive (${user.email || 'Akun Google'}). Spreadsheet database siap digunakan!`
+      };
+    } catch (err: any) {
+      console.error('Error connecting Google Database:', err);
+      setIsSyncing(false);
+      const msg = err?.message || 'Gagal menghubungkan Google Sheets.';
+      setSyncError(msg);
+      return { success: false, message: msg };
+    }
+  };
+
+  const disconnectGoogleDatabase = async () => {
+    await googleSignOut();
+    setGoogleUser(null);
+    setIsGoogleConnected(false);
+    setSyncError(null);
+  };
+
+  const syncFromGoogleSheets = async (): Promise<{ success: boolean; message: string }> => {
+    if (!spreadsheetId) {
+      return { success: false, message: 'Belum ada Spreadsheet yang terhubung.' };
+    }
+    const token = await getGoogleAccessToken();
+    if (!token) {
+      return { success: false, message: 'Sesi Google telah berakhir. Harap klik Masuk dengan Google kembali.' };
+    }
+
+    setIsSyncing(true);
+    setSyncError(null);
+    try {
+      const cloudData = await fetchAllErpDataFromSheets(spreadsheetId, token);
+      if (cloudData.materials.length > 0) setMaterials(cloudData.materials);
+      if (cloudData.menuItems.length > 0) setMenuItems(cloudData.menuItems);
+      if (cloudData.transactions.length > 0) setTransactions(cloudData.transactions);
+      if (cloudData.purchases.length > 0) setPurchases(cloudData.purchases);
+      if (cloudData.expenses.length > 0) setExpenses(cloudData.expenses);
+      if (cloudData.adjustments.length > 0) setAdjustments(cloudData.adjustments);
+      if (cloudData.users.length > 0) setUsers(cloudData.users);
+
+      setLastSyncTime(new Date());
+      setIsSyncing(false);
+      return { success: true, message: 'Data real-time berhasil diselaraskan dari Google Sheets!' };
+    } catch (err: any) {
+      console.error('Sync error:', err);
+      setIsSyncing(false);
+      const msg = err?.message || 'Gagal mengambil data dari Google Sheets.';
+      setSyncError(msg);
+      return { success: false, message: msg };
+    }
+  };
+
+  const syncToGoogleSheets = async (): Promise<{ success: boolean; message: string }> => {
+    if (!spreadsheetId) {
+      return { success: false, message: 'Belum ada Spreadsheet yang terhubung.' };
+    }
+    const token = await getGoogleAccessToken();
+    if (!token) {
+      return { success: false, message: 'Sesi Google telah berakhir. Harap klik Masuk dengan Google kembali.' };
+    }
+
+    setIsSyncing(true);
+    setSyncError(null);
+    try {
+      await pushEntireDatabaseToSheets(spreadsheetId, token, {
+        materials,
+        menuItems,
+        transactions,
+        purchases,
+        expenses,
+        adjustments,
+        users
+      });
+      setLastSyncTime(new Date());
+      setIsSyncing(false);
+      return { success: true, message: 'Seluruh data lokal berhasil diperbarui ke Google Sheets!' };
+    } catch (err: any) {
+      console.error('Push error:', err);
+      setIsSyncing(false);
+      const msg = err?.message || 'Gagal mengirim data ke Google Sheets.';
+      setSyncError(msg);
+      return { success: false, message: msg };
+    }
+  };
+
+  const setCustomSpreadsheetId = async (idOrUrl: string): Promise<{ success: boolean; message: string }> => {
+    let cleanId = idOrUrl.trim();
+    const match = cleanId.match(/\/d\/([a-zA-Z0-9-_]+)/);
+    if (match) {
+      cleanId = match[1];
+    }
+
+    if (!cleanId) {
+      return { success: false, message: 'ID atau URL Spreadsheet tidak valid.' };
+    }
+
+    const token = await getGoogleAccessToken();
+    if (!token) {
+      return { success: false, message: 'Harap masuk dengan Google terlebih dahulu.' };
+    }
+
+    setIsSyncing(true);
+    try {
+      await initializeTableHeaders(cleanId, token);
+      setSpreadsheetId(cleanId);
+      setSpreadsheetUrl(`https://docs.google.com/spreadsheets/d/${cleanId}/edit`);
+
+      const cloudData = await fetchAllErpDataFromSheets(cleanId, token);
+      if (cloudData.materials.length > 0) setMaterials(cloudData.materials);
+      if (cloudData.menuItems.length > 0) setMenuItems(cloudData.menuItems);
+      if (cloudData.transactions.length > 0) setTransactions(cloudData.transactions);
+      if (cloudData.purchases.length > 0) setPurchases(cloudData.purchases);
+      if (cloudData.expenses.length > 0) setExpenses(cloudData.expenses);
+      if (cloudData.adjustments.length > 0) setAdjustments(cloudData.adjustments);
+      if (cloudData.users.length > 0) setUsers(cloudData.users);
+
+      setLastSyncTime(new Date());
+      setIsSyncing(false);
+      return { success: true, message: 'Spreadsheet kustom berhasil dihubungkan dan disinkronkan!' };
+    } catch (err: any) {
+      setIsSyncing(false);
+      const msg = err?.message || 'Gagal mengakses Spreadsheet kustom tersebut.';
+      setSyncError(msg);
+      return { success: false, message: msg };
+    }
+  };
+
+  // Real-Time Background Polling for Google Workspace Sheets
+  useEffect(() => {
+    if (!isGoogleConnected || !spreadsheetId || !autoSyncEnabled) return;
+
+    const interval = setInterval(async () => {
+      if (document.visibilityState === 'visible') {
+        const token = await getGoogleAccessToken();
+        if (token && spreadsheetId) {
+          try {
+            const cloudData = await fetchAllErpDataFromSheets(spreadsheetId, token);
+            if (cloudData.materials.length > 0) setMaterials(cloudData.materials);
+            if (cloudData.menuItems.length > 0) setMenuItems(cloudData.menuItems);
+            if (cloudData.transactions.length > 0) setTransactions(cloudData.transactions);
+            if (cloudData.purchases.length > 0) setPurchases(cloudData.purchases);
+            if (cloudData.expenses.length > 0) setExpenses(cloudData.expenses);
+            if (cloudData.adjustments.length > 0) setAdjustments(cloudData.adjustments);
+            if (cloudData.users.length > 0) setUsers(cloudData.users);
+            setLastSyncTime(new Date());
+          } catch (e) {
+            // Silently ignore background poll errors
+          }
+        }
+      }
+    }, 20000);
+
+    return () => clearInterval(interval);
+  }, [isGoogleConnected, spreadsheetId, autoSyncEnabled]);
+
   // Complete checkout & BOM stock deduction
   const processCheckout = async (
     paymentMethod: PaymentMethod,
@@ -692,6 +999,17 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
     }
 
+    // 5b. Direct Google Drive / Google Sheets Realtime API Sync
+    if (isGoogleConnected && spreadsheetId) {
+      getGoogleAccessToken().then(token => {
+        if (token && spreadsheetId) {
+          appendTransactionToSheet(spreadsheetId, token, newTransaction).catch(err => {
+            console.warn('Failed to append transaction to Google Sheet:', err);
+          });
+        }
+      });
+    }
+
     // Reset Cart
     clearCart();
 
@@ -759,6 +1077,17 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         total: newPO.total
       });
     }
+
+    // Google Drive Workspace Sheet sync
+    if (isGoogleConnected && spreadsheetId) {
+      getGoogleAccessToken().then(token => {
+        if (token && spreadsheetId) {
+          appendPurchaseToSheet(spreadsheetId, token, newPO).catch(err => {
+            console.warn('Failed to append purchase to Google Sheet:', err);
+          });
+        }
+      });
+    }
   };
 
   const deletePurchase = (id: string) => {
@@ -791,6 +1120,17 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         id: newExpense.expenseNo,
         name: newExpense.name,
         amount: newExpense.amount
+      });
+    }
+
+    // Google Drive Workspace Sheet sync
+    if (isGoogleConnected && spreadsheetId) {
+      getGoogleAccessToken().then(token => {
+        if (token && spreadsheetId) {
+          appendExpenseToSheet(spreadsheetId, token, newExpense).catch(err => {
+            console.warn('Failed to append expense to Google Sheet:', err);
+          });
+        }
       });
     }
   };
@@ -836,6 +1176,17 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
 
     setAdjustments(prev => [newAdjustment, ...prev]);
+
+    // Google Drive Workspace Sheet sync
+    if (isGoogleConnected && spreadsheetId) {
+      getGoogleAccessToken().then(token => {
+        if (token && spreadsheetId) {
+          appendAdjustmentToSheet(spreadsheetId, token, newAdjustment).catch(err => {
+            console.warn('Failed to append adjustment to Google Sheet:', err);
+          });
+        }
+      });
+    }
   };
 
   const deleteAdjustment = (id: string, restoreStock = false) => {
@@ -1318,6 +1669,21 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         seedAllToGoogleSheet,
         syncWithGoogleSheet,
         syncAllToGoogleSheet,
+        // Google Sheets Workspace Realtime Database (Google Drive direct integration)
+        googleUser,
+        isGoogleConnected,
+        spreadsheetId,
+        spreadsheetUrl,
+        isSyncing,
+        lastSyncTime,
+        syncError,
+        autoSyncEnabled,
+        setAutoSyncEnabled,
+        connectGoogleDatabase,
+        disconnectGoogleDatabase,
+        syncFromGoogleSheets,
+        syncToGoogleSheets,
+        setCustomSpreadsheetId,
         importMaterialsBatch,
         importMenuBatch,
         importBOMBatch,

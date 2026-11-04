@@ -33,7 +33,19 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAccountSwitcher,
   onSwitchTab,
 }) => {
-  const { materials, cart, currentUser, logout, config, cloudSyncStatus, lastCloudSyncTime } = useERP();
+  const {
+    materials,
+    cart,
+    currentUser,
+    logout,
+    config,
+    cloudSyncStatus,
+    lastCloudSyncTime,
+    isGoogleConnected,
+    googleUser,
+    isSyncing,
+    lastSyncTime
+  } = useERP();
   const isSheetConfigured = Boolean(config.googleWebAppUrl && config.googleWebAppUrl.trim().length > 0);
   const lowStockCount = materials.filter(m => m.stock <= m.minStock).length;
 
@@ -76,7 +88,7 @@ export const Header: React.FC<HeaderProps> = ({
         {onOpenAccountSwitcher && (
           <button
             onClick={onOpenAccountSwitcher}
-            className="flex items-center space-x-2 px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-800 text-xs font-semibold transition"
+            className="flex items-center space-x-2.5 px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-800 text-xs font-semibold transition cursor-pointer"
             title="Klik untuk beralih akun / login"
           >
             <div className="w-5 h-5 rounded-full bg-amber-500 text-slate-950 font-black text-[10px] flex items-center justify-center">
@@ -92,7 +104,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={onOpenVercelGuide}
             title="Panduan Deploy Vercel.app"
-            className="flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition shadow-xs"
+            className="flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition shadow-xs cursor-pointer"
           >
             <span className="text-[11px]">▲</span>
             <span className="hidden sm:inline">Vercel.app</span>
@@ -103,7 +115,7 @@ export const Header: React.FC<HeaderProps> = ({
         {lowStockCount > 0 && (
           <button
             onClick={() => onSwitchTab('materials')}
-            className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl bg-rose-50 text-rose-700 text-xs font-bold border border-rose-200 hover:bg-rose-100 transition"
+            className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl bg-rose-50 text-rose-700 text-xs font-bold border border-rose-200 hover:bg-rose-100 transition cursor-pointer"
           >
             <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
             <span>{lowStockCount} Bahan Menipis</span>
@@ -113,21 +125,41 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Google Sheets Live Database Indicator */}
         <button
           onClick={onOpenGoogleSheetSettings}
-          title={isSheetConfigured ? `Cloud Database Terhubung (${lastCloudSyncTime || 'Real-Time'}). Klik untuk pengaturan atau tarik data.` : 'Hubungkan Google Sheets sebagai Database Real-Time'}
+          title={
+            isGoogleConnected
+              ? `Google Drive & Sheets Terhubung (${googleUser?.email || 'Akun Google'}). Klik untuk sync atau kelola database.`
+              : isSheetConfigured
+              ? `Cloud Database Terhubung (${lastCloudSyncTime || 'Real-Time'}). Klik untuk pengaturan atau tarik data.`
+              : 'Hubungkan Akun Google untuk Database Real-Time'
+          }
           className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition border cursor-pointer ${
-            cloudSyncStatus === 'connected'
+            isGoogleConnected || cloudSyncStatus === 'connected'
               ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
-              : cloudSyncStatus === 'syncing'
+              : isSyncing || cloudSyncStatus === 'syncing'
               ? 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
               : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
           }`}
         >
-          <Cloud size={14} className={cloudSyncStatus === 'connected' ? 'text-emerald-600' : cloudSyncStatus === 'syncing' ? 'text-amber-500 animate-spin' : 'text-slate-400'} />
+          <Cloud
+            size={14}
+            className={
+              isGoogleConnected || cloudSyncStatus === 'connected'
+                ? 'text-emerald-600'
+                : isSyncing || cloudSyncStatus === 'syncing'
+                ? 'text-amber-500 animate-spin'
+                : 'text-slate-400'
+            }
+          />
           <span className="hidden md:inline text-[11px]">
-            {cloudSyncStatus === 'connected' ? (lastCloudSyncTime ? `Live Sheet (${lastCloudSyncTime})` : 'Live Sheet') :
-             cloudSyncStatus === 'syncing' ? 'Menyinkronkan...' : 'Konek Sheet'}
+            {isGoogleConnected
+              ? (lastSyncTime ? `Drive Live (${lastSyncTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })})` : 'Drive Live')
+              : cloudSyncStatus === 'connected'
+              ? (lastCloudSyncTime ? `Live Sheet (${lastCloudSyncTime})` : 'Live Sheet')
+              : isSyncing || cloudSyncStatus === 'syncing'
+              ? 'Menyinkronkan...'
+              : 'Konek Google Sheet'}
           </span>
-          {cloudSyncStatus === 'connected' && (
+          {(isGoogleConnected || cloudSyncStatus === 'connected') && (
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
           )}
         </button>
