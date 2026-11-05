@@ -25,6 +25,8 @@ interface GoogleSheetsConnectModalProps {
 
 export const GoogleSheetsConnectModal: React.FC<GoogleSheetsConnectModalProps> = ({ onClose }) => {
   const {
+    firestoreStatus,
+    pushAllToFirestore,
     googleUser,
     isGoogleConnected,
     spreadsheetId,
@@ -45,6 +47,19 @@ export const GoogleSheetsConnectModal: React.FC<GoogleSheetsConnectModalProps> =
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [actionMessage, setActionMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [isPushingFirestore, setIsPushingFirestore] = useState(false);
+
+  const handlePushFirestore = async () => {
+    setIsPushingFirestore(true);
+    setActionMessage(null);
+    const res = await pushAllToFirestore();
+    setIsPushingFirestore(false);
+    if (res.success) {
+      setActionMessage({ text: res.message, type: 'success' });
+    } else {
+      setActionMessage({ text: res.message, type: 'error' });
+    }
+  };
 
   const handleConnect = async () => {
     setActionMessage(null);
@@ -137,6 +152,35 @@ export const GoogleSheetsConnectModal: React.FC<GoogleSheetsConnectModalProps> =
 
         {/* Body */}
         <div className="p-6 overflow-y-auto space-y-5 flex-1">
+          {/* Cloud Firestore Status Banner */}
+          <div className="p-4 bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md border border-slate-700/60">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0">
+                <Cloud size={20} className={firestoreStatus === 'connected' ? 'text-emerald-400' : 'text-amber-400'} />
+              </div>
+              <div>
+                <div className="flex items-center space-x-2">
+                  <h4 className="font-bold text-xs text-white">Firebase Cloud Firestore Real-Time</h4>
+                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-black ${firestoreStatus === 'connected' ? 'bg-emerald-500 text-slate-950' : 'bg-amber-400 text-slate-950'}`}>
+                    {firestoreStatus === 'connected' ? 'AKTIF & SINKRON' : 'MENGHUBUNGKAN'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-300 mt-0.5">
+                  Database cloud multi-device untuk kasir, supervisor, dan owner.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={handlePushFirestore}
+              disabled={isPushingFirestore}
+              className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition flex items-center justify-center space-x-1.5 shrink-0 cursor-pointer disabled:opacity-50"
+            >
+              <RefreshCw size={13} className={isPushingFirestore ? 'animate-spin' : ''} />
+              <span>{isPushingFirestore ? 'Menyimpan...' : 'Sync ke Firestore'}</span>
+            </button>
+          </div>
+
           {/* Action notification message */}
           {actionMessage && (
             <div

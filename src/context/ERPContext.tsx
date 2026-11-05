@@ -50,8 +50,34 @@ import {
   pushEntireDatabaseToSheets,
   initializeTableHeaders
 } from '../services/googleSheetsDb';
+import {
+  db,
+  testFirestoreConnection,
+  saveMaterialToFirestore,
+  deleteMaterialFromFirestore,
+  saveMenuItemToFirestore,
+  deleteMenuItemFromFirestore,
+  saveTransactionToFirestore,
+  savePurchaseToFirestore,
+  deletePurchaseFromFirestore,
+  saveExpenseToFirestore,
+  deleteExpenseFromFirestore,
+  saveAdjustmentToFirestore,
+  deleteAdjustmentFromFirestore,
+  saveUserToFirestore,
+  deleteUserFromFirestore,
+  saveSettingsToFirestore,
+  seedAllToFirestore,
+  handleFirestoreError,
+  OperationType
+} from '../services/firebase';
+import { collection, onSnapshot, doc } from 'firebase/firestore';
 
 interface ERPContextType {
+  // Firebase Cloud Firestore Real-Time Database
+  firestoreStatus: 'connected' | 'connecting' | 'offline';
+  pushAllToFirestore: () => Promise<{ success: boolean; message: string }>;
+
   materials: Material[];
   menuItems: MenuItem[];
   transactions: Transaction[];
@@ -275,6 +301,9 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const saved = localStorage.getItem(STORAGE_KEYS.CONFIG);
     return saved ? { ...INITIAL_CONFIG, ...JSON.parse(saved) } : INITIAL_CONFIG;
   });
+
+  // Firebase Cloud Firestore Real-Time Database State
+  const [firestoreStatus, setFirestoreStatus] = useState<'connected' | 'connecting' | 'offline'>('connecting');
 
   // Cloud Real-Time Database Sync States
   const [cloudSyncStatus, setCloudSyncStatus] = useState<'connected' | 'syncing' | 'offline' | 'error'>(() => {
@@ -636,6 +665,112 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, [config.googleWebAppUrl]);
 
+  // Firebase Firestore Real-Time Multi-Device Listener
+  useEffect(() => {
+    testFirestoreConnection().then(connected => {
+      setFirestoreStatus(connected ? 'connected' : 'offline');
+    });
+
+    // 1. Materials listener
+    const unsubMaterials = onSnapshot(collection(db, 'materials'), snapshot => {
+      if (!snapshot.empty) {
+        const cloudMaterials = snapshot.docs.map(d => d.data() as Material);
+        setMaterials(cloudMaterials);
+      } else {
+        INITIAL_MATERIALS.forEach(m => saveMaterialToFirestore(m));
+      }
+    }, err => handleFirestoreError(err, OperationType.LIST, 'materials'));
+
+    // 2. Menu items listener
+    const unsubMenu = onSnapshot(collection(db, 'menuItems'), snapshot => {
+      if (!snapshot.empty) {
+        const cloudMenu = snapshot.docs.map(d => d.data() as MenuItem);
+        setMenuItems(cloudMenu);
+      } else {
+        INITIAL_MENU_ITEMS.forEach(mi => saveMenuItemToFirestore(mi));
+      }
+    }, err => handleFirestoreError(err, OperationType.LIST, 'menuItems'));
+
+    // 3. Transactions listener
+    const unsubTransactions = onSnapshot(collection(db, 'transactions'), snapshot => {
+      if (!snapshot.empty) {
+        const cloudTrx = snapshot.docs.map(d => d.data() as Transaction);
+        cloudTrx.sort((a, b) => (b.date || b.id).localeCompare(a.date || a.id));
+        setTransactions(cloudTrx);
+      }
+    }, err => handleFirestoreError(err, OperationType.LIST, 'transactions'));
+
+    // 4. Purchases listener
+    const unsubPurchases = onSnapshot(collection(db, 'purchases'), snapshot => {
+      if (!snapshot.empty) {
+        const cloudPurchases = snapshot.docs.map(d => d.data() as PurchaseOrder);
+        cloudPurchases.sort((a, b) => (b.date || b.id).localeCompare(a.date || a.id));
+        setPurchases(cloudPurchases);
+      }
+    }, err => handleFirestoreError(err, OperationType.LIST, 'purchases'));
+
+    // 5. Expenses listener
+    const unsubExpenses = onSnapshot(collection(db, 'expenses'), snapshot => {
+      if (!snapshot.empty) {
+        const cloudExpenses = snapshot.docs.map(d => d.data() as Expense);
+        cloudExpenses.sort((a, b) => (b.date || b.id).localeCompare(a.date || a.id));
+        setExpenses(cloudExpenses);
+      }
+    }, err => handleFirestoreError(err, OperationType.LIST, 'expenses'));
+
+    // 6. Adjustments listener
+    const unsubAdjustments = onSnapshot(collection(db, 'adjustments'), snapshot => {
+      if (!snapshot.empty) {
+        const cloudAdj = snapshot.docs.map(d => d.data() as StockAdjustment);
+        cloudAdj.sort((a, b) => (b.date || b.id).localeCompare(a.date || a.id));
+        setAdjustments(cloudAdj);
+      }
+    }, err => handleFirestoreError(err, OperationType.LIST, 'adjustments'));
+
+    // 7. Users listener
+    const unsubUsers = onSnapshot(collection(db, 'users'), snapshot => {
+      if (!snapshot.empty) {
+        const cloudUsers = snapshot.docs.map(d => d.data() as UserAccount);
+        setUsers(cloudUsers);
+      } else {
+        INITIAL_USERS.forEach(u => saveUserToFirestore(u));
+      }
+    }, err => handleFirestoreError(err, OperationType.LIST, 'users'));
+
+    // 8. Settings listener
+    const unsubSettings = onSnapshot(doc(db, 'settings', 'store_config'), docSnap => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.menuCategories && Array.isArray(data.menuCategories)) {
+          setMenuCategories(data.menuCategories);
+        }
+        if (data.materialCategories && Array.isArray(data.materialCategories)) {
+          setMaterialCategories(data.materialCategories);
+        }
+        if (data.salesTargets) {
+          setSalesTargets(data.salesTargets);
+        }
+      } else {
+        saveSettingsToFirestore({
+          menuCategories: DEFAULT_MENU_CATEGORIES,
+          materialCategories: DEFAULT_MATERIAL_CATEGORIES,
+          salesTargets: DEFAULT_SALES_TARGET
+        });
+      }
+    }, err => handleFirestoreError(err, OperationType.GET, 'settings/store_config'));
+
+    return () => {
+      unsubMaterials();
+      unsubMenu();
+      unsubTransactions();
+      unsubPurchases();
+      unsubExpenses();
+      unsubAdjustments();
+      unsubUsers();
+      unsubSettings();
+    };
+  }, []);
+
   // Google Workspace Auth Listener on Mount
   useEffect(() => {
     const unsubscribe = initGoogleAuth(
@@ -933,6 +1068,7 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             const deduction = recipeIng.qty * cartItem.qty;
             target.stock = Math.max(0, target.stock - deduction);
             target.lastUpdated = new Date().toISOString().slice(0, 10);
+            saveMaterialToFirestore(target);
           }
         });
       });
@@ -976,6 +1112,9 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // 4. Update transactions state
     setTransactions(prev => [newTransaction, ...prev]);
+
+    // 4b. Real-Time Cloud Firestore Sync
+    saveTransactionToFirestore(newTransaction);
 
     // 5. Try syncing to Google Sheet if enabled
     if (config.autoSyncGoogleSheet && config.googleWebAppUrl) {
@@ -1050,19 +1189,22 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const newStock = mat.stock + poData.qty;
           const newAvgCost = newStock > 0 ? Math.round((currentTotalVal + purchaseVal) / newStock) : poData.unitPrice;
 
-          return {
+          const updatedMat = {
             ...mat,
             stock: newStock,
             costPerUnit: newAvgCost,
             supplier: poData.supplier || mat.supplier,
             lastUpdated: dateStr
           };
+          saveMaterialToFirestore(updatedMat);
+          return updatedMat;
         }
         return mat;
       })
     );
 
     setPurchases(prev => [newPO, ...prev]);
+    savePurchaseToFirestore(newPO);
 
     // Sync to GAS
     if (config.autoSyncGoogleSheet && config.googleWebAppUrl) {
@@ -1092,6 +1234,7 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const deletePurchase = (id: string) => {
     setPurchases(prev => prev.filter(p => p.id !== id));
+    deletePurchaseFromFirestore(id);
   };
 
   // Non-stock operational expenses
@@ -1114,6 +1257,7 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setExpenses(prev => [newExpense, ...prev]);
+    saveExpenseToFirestore(newExpense);
 
     if (config.autoSyncGoogleSheet && config.googleWebAppUrl) {
       syncWithGoogleSheet('ADD_EXPENSE', {
@@ -1137,6 +1281,7 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const deleteExpense = (id: string) => {
     setExpenses(prev => prev.filter(e => e.id !== id));
+    deleteExpenseFromFirestore(id);
   };
 
   // Stock Adjustment / Stock Opname
@@ -1168,14 +1313,18 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // Update material to actual stock
     setMaterials(prev =>
-      prev.map(m =>
-        m.id === mat.id
-          ? { ...m, stock: data.actualStock, lastUpdated: new Date().toISOString().slice(0, 10) }
-          : m
-      )
+      prev.map(m => {
+        if (m.id === mat.id) {
+          const updatedMat = { ...m, stock: data.actualStock, lastUpdated: new Date().toISOString().slice(0, 10) };
+          saveMaterialToFirestore(updatedMat);
+          return updatedMat;
+        }
+        return m;
+      })
     );
 
     setAdjustments(prev => [newAdjustment, ...prev]);
+    saveAdjustmentToFirestore(newAdjustment);
 
     // Google Drive Workspace Sheet sync
     if (isGoogleConnected && spreadsheetId) {
@@ -1195,15 +1344,19 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     if (restoreStock) {
       setMaterials(prev =>
-        prev.map(m =>
-          m.id === target.materialId
-            ? { ...m, stock: Math.max(0, m.stock - target.difference), lastUpdated: new Date().toISOString().slice(0, 10) }
-            : m
-        )
+        prev.map(m => {
+          if (m.id === target.materialId) {
+            const restoredMat = { ...m, stock: Math.max(0, m.stock - target.difference), lastUpdated: new Date().toISOString().slice(0, 10) };
+            saveMaterialToFirestore(restoredMat);
+            return restoredMat;
+          }
+          return m;
+        })
       );
     }
 
     setAdjustments(prev => prev.filter(a => a.id !== id));
+    deleteAdjustmentFromFirestore(id);
   };
 
   // Void / Refund Transaction (Restores Raw Material Stock!)
@@ -1222,6 +1375,7 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             const target = updated.find(m => m.id === recipeIng.materialId);
             if (target) {
               target.stock += recipeIng.qty * tItem.qty;
+              saveMaterialToFirestore(target);
             }
           });
         }
@@ -1231,7 +1385,14 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
 
     setTransactions(prev =>
-      prev.map(t => (t.id === transactionId ? { ...t, status: 'REFUNDED' } : t))
+      prev.map(t => {
+        if (t.id === transactionId) {
+          const updated = { ...t, status: 'REFUNDED' as const };
+          saveTransactionToFirestore(updated);
+          return updated;
+        }
+        return t;
+      })
     );
   };
 
@@ -1243,18 +1404,25 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       lastUpdated: new Date().toISOString().slice(0, 10)
     };
     setMaterials(prev => [...prev, newMat]);
+    saveMaterialToFirestore(newMat);
   };
 
   const updateMaterial = (id: string, updates: Partial<Material>) => {
     setMaterials(prev =>
-      prev.map(m =>
-        m.id === id ? { ...m, ...updates, lastUpdated: new Date().toISOString().slice(0, 10) } : m
-      )
+      prev.map(m => {
+        if (m.id === id) {
+          const updated = { ...m, ...updates, lastUpdated: new Date().toISOString().slice(0, 10) };
+          saveMaterialToFirestore(updated);
+          return updated;
+        }
+        return m;
+      })
     );
   };
 
   const deleteMaterial = (id: string) => {
     setMaterials(prev => prev.filter(m => m.id !== id));
+    deleteMaterialFromFirestore(id);
   };
 
   // Menu items CRUD
@@ -1264,16 +1432,25 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: `menu-${Date.now()}`
     };
     setMenuItems(prev => [...prev, newItem]);
+    saveMenuItemToFirestore(newItem);
   };
 
   const updateMenuItem = (id: string, updates: Partial<MenuItem>) => {
     setMenuItems(prev =>
-      prev.map(m => (m.id === id ? { ...m, ...updates } : m))
+      prev.map(m => {
+        if (m.id === id) {
+          const updated = { ...m, ...updates };
+          saveMenuItemToFirestore(updated);
+          return updated;
+        }
+        return m;
+      })
     );
   };
 
   const deleteMenuItem = (id: string) => {
     setMenuItems(prev => prev.filter(m => m.id !== id));
+    deleteMenuItemFromFirestore(id);
   };
 
   // Parked Orders (Hold & Recall)
@@ -1503,11 +1680,19 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       isActive: true
     };
     setUsers(prev => [...prev, newUser]);
+    saveUserToFirestore(newUser);
   };
 
   const updateUser = (id: string, updates: Partial<UserAccount>) => {
     setUsers(prev =>
-      prev.map(u => (u.id === id ? { ...u, ...updates } : u))
+      prev.map(u => {
+        if (u.id === id) {
+          const updated = { ...u, ...updates };
+          saveUserToFirestore(updated);
+          return updated;
+        }
+        return u;
+      })
     );
     if (currentUser.id === id) {
       setCurrentUser(prev => ({ ...prev, ...updates }));
@@ -1520,6 +1705,7 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return;
     }
     setUsers(prev => prev.filter(u => u.id !== id));
+    deleteUserFromFirestore(id);
     if (currentUser.id === id) {
       const nextUser = users.find(u => u.id !== id) || users[0];
       setCurrentUser(nextUser);
@@ -1534,20 +1720,32 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Sales Targets
   const updateSalesTargets = (targets: Partial<SalesTarget>) => {
-    setSalesTargets(prev => ({ ...prev, ...targets }));
+    setSalesTargets(prev => {
+      const updated = { ...prev, ...targets };
+      saveSettingsToFirestore({ salesTargets: updated });
+      return updated;
+    });
   };
 
   // Dynamic Categories (Menu)
   const addMenuCategory = (cat: string) => {
     const trimmed = cat.trim();
     if (!trimmed || menuCategories.includes(trimmed)) return;
-    setMenuCategories(prev => [...prev, trimmed]);
+    setMenuCategories(prev => {
+      const updated = [...prev, trimmed];
+      saveSettingsToFirestore({ menuCategories: updated });
+      return updated;
+    });
   };
 
   const updateMenuCategory = (oldCat: string, newCat: string) => {
     const trimmed = newCat.trim();
     if (!trimmed || oldCat === trimmed) return;
-    setMenuCategories(prev => prev.map(c => (c === oldCat ? trimmed : c)));
+    setMenuCategories(prev => {
+      const updated = prev.map(c => (c === oldCat ? trimmed : c));
+      saveSettingsToFirestore({ menuCategories: updated });
+      return updated;
+    });
     // Also update any menu items using this category
     setMenuItems(prev => prev.map(m => (m.category === oldCat ? { ...m, category: trimmed } : m)));
   };
@@ -1557,20 +1755,32 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       alert('Minimal harus ada 1 kategori menu.');
       return;
     }
-    setMenuCategories(prev => prev.filter(c => c !== cat));
+    setMenuCategories(prev => {
+      const updated = prev.filter(c => c !== cat);
+      saveSettingsToFirestore({ menuCategories: updated });
+      return updated;
+    });
   };
 
   // Dynamic Categories (Material)
   const addMaterialCategory = (cat: string) => {
     const trimmed = cat.trim();
     if (!trimmed || materialCategories.includes(trimmed)) return;
-    setMaterialCategories(prev => [...prev, trimmed]);
+    setMaterialCategories(prev => {
+      const updated = [...prev, trimmed];
+      saveSettingsToFirestore({ materialCategories: updated });
+      return updated;
+    });
   };
 
   const updateMaterialCategory = (oldCat: string, newCat: string) => {
     const trimmed = newCat.trim();
     if (!trimmed || oldCat === trimmed) return;
-    setMaterialCategories(prev => prev.map(c => (c === oldCat ? trimmed : c)));
+    setMaterialCategories(prev => {
+      const updated = prev.map(c => (c === oldCat ? trimmed : c));
+      saveSettingsToFirestore({ materialCategories: updated });
+      return updated;
+    });
     setMaterials(prev => prev.map(m => (m.category === oldCat ? { ...m, category: trimmed } : m)));
   };
 
@@ -1579,7 +1789,26 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       alert('Minimal harus ada 1 kategori bahan.');
       return;
     }
-    setMaterialCategories(prev => prev.filter(c => c !== cat));
+    setMaterialCategories(prev => {
+      const updated = prev.filter(c => c !== cat);
+      saveSettingsToFirestore({ materialCategories: updated });
+      return updated;
+    });
+  };
+
+  const pushAllToFirestore = async (): Promise<{ success: boolean; message: string }> => {
+    return await seedAllToFirestore({
+      materials,
+      menuItems,
+      transactions,
+      purchases,
+      expenses,
+      adjustments,
+      users,
+      menuCategories,
+      materialCategories,
+      salesTargets
+    });
   };
 
   const resetAllData = () => {
@@ -1602,6 +1831,8 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   return (
     <ERPContext.Provider
       value={{
+        firestoreStatus,
+        pushAllToFirestore,
         materials,
         menuItems,
         transactions,

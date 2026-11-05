@@ -1,0 +1,68 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128;
+    }
+
+    // Materials Collection (Bahan Baku)
+    match /materials/{materialId} {
+      allow read: if true;
+      allow write: if isSignedIn() || request.time < timestamp.date(2027, 1, 1);
+    }
+
+    // Menu Items & BOM
+    match /menuItems/{menuId} {
+      allow read: if true;
+      allow write: if isSignedIn() || request.time < timestamp.date(2027, 1, 1);
+    }
+
+    // POS Transactions (Penjualan)
+    match /transactions/{transactionId} {
+      allow read: if true;
+      allow create, update: if isSignedIn() || request.time < timestamp.date(2027, 1, 1);
+      allow delete: if isSignedIn();
+    }
+
+    // Purchasing PO
+    match /purchases/{purchaseId} {
+      allow read: if true;
+      allow write: if isSignedIn() || request.time < timestamp.date(2027, 1, 1);
+    }
+
+    // Operational Expenses
+    match /expenses/{expenseId} {
+      allow read: if true;
+      allow write: if isSignedIn() || request.time < timestamp.date(2027, 1, 1);
+    }
+
+    // Stock Adjustments (Opname)
+    match /adjustments/{adjustmentId} {
+      allow read: if true;
+      allow write: if isSignedIn() || request.time < timestamp.date(2027, 1, 1);
+    }
+
+    // User Accounts (RBAC)
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if isSignedIn() || request.time < timestamp.date(2027, 1, 1);
+    }
+
+    // Store Settings & Targets
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isSignedIn() || request.time < timestamp.date(2027, 1, 1);
+    }
+  }
+}

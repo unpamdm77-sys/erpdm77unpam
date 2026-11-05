@@ -58,6 +58,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     transactions,
     currentUser,
     logout,
+    firestoreStatus,
     cloudSyncStatus,
     lastCloudSyncTime,
     isGoogleConnected,
@@ -204,7 +205,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <span className="text-[10px] text-rose-400/80 font-mono">Logout &rarr;</span>
         </button>
 
-        {/* Google Sheets Status button */}
+        {/* Google Sheets / Firestore Status button */}
         <button
           onClick={onOpenGoogleSheetSettings}
           className="w-full p-2.5 rounded-xl bg-slate-800/50 hover:bg-slate-800 text-slate-300 text-left text-[11px] flex items-center justify-between transition border border-slate-800 cursor-pointer"
@@ -213,7 +214,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <Cloud
               size={13}
               className={
-                isGoogleConnected || cloudSyncStatus === 'connected'
+                firestoreStatus === 'connected' || isGoogleConnected || cloudSyncStatus === 'connected'
                   ? 'text-emerald-400'
                   : isSyncing || cloudSyncStatus === 'syncing'
                   ? 'text-amber-400 animate-spin'
@@ -221,23 +222,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }
             />
             <span className="truncate text-[10px]">
-              {isGoogleConnected
+              {firestoreStatus === 'connected'
+                ? 'Cloud Firestore Live'
+                : isGoogleConnected
                 ? (lastSyncTime ? `Drive (${lastSyncTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })})` : 'Google Drive')
                 : cloudSyncStatus === 'connected'
                 ? (lastCloudSyncTime ? `Sheet (${lastCloudSyncTime})` : 'Cloud Sheet Live')
-                : 'Database Sheet'}
+                : 'Database Cloud'}
             </span>
           </div>
           <span
             className={`px-1.5 py-0.5 rounded text-[8px] font-bold shrink-0 ${
-              isGoogleConnected || cloudSyncStatus === 'connected'
+              firestoreStatus === 'connected' || isGoogleConnected || cloudSyncStatus === 'connected'
                 ? 'bg-emerald-500/20 text-emerald-300'
                 : isSyncing || cloudSyncStatus === 'syncing'
                 ? 'bg-amber-500/20 text-amber-300'
                 : 'bg-slate-700 text-slate-400'
             }`}
           >
-            {isGoogleConnected ? 'Terkoneksi' : cloudSyncStatus === 'connected' ? 'Real-Time' : isSheetConfigured ? 'Konek' : 'Offline'}
+            {firestoreStatus === 'connected' ? 'Realtime' : isGoogleConnected ? 'Terkoneksi' : 'Offline'}
           </span>
         </button>
 

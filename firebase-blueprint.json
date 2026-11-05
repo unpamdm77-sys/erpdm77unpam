@@ -1,0 +1,181 @@
+{
+  "entities": {
+    "material": {
+      "title": "Material",
+      "description": "Raw material inventory item for Dimsum Mentai 77 UNPAM",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "code": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "stock": { "type": "number" },
+        "unit": { "type": "string" },
+        "minStock": { "type": "number" },
+        "costPerUnit": { "type": "number" },
+        "supplier": { "type": "string" },
+        "lastUpdated": { "type": "string" }
+      },
+      "required": ["id", "name", "category", "stock", "unit", "costPerUnit"]
+    },
+    "menuItem": {
+      "title": "MenuItem",
+      "description": "Finished product menu item with BOM recipes",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "code": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "price": { "type": "number" },
+        "description": { "type": "string" },
+        "isAvailable": { "type": "boolean" },
+        "recipe": { "type": "array" }
+      },
+      "required": ["id", "name", "category", "price", "isAvailable"]
+    },
+    "transaction": {
+      "title": "Transaction",
+      "description": "POS checkout transaction record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "invoiceNo": { "type": "string" },
+        "date": { "type": "string" },
+        "customer": { "type": "string" },
+        "orderType": { "type": "string" },
+        "tableNo": { "type": "string" },
+        "paymentMethod": { "type": "string" },
+        "items": { "type": "array" },
+        "subtotal": { "type": "number" },
+        "discount": { "type": "number" },
+        "total": { "type": "number" },
+        "cashReceived": { "type": "number" },
+        "change": { "type": "number" },
+        "totalHpp": { "type": "number" },
+        "grossProfit": { "type": "number" },
+        "status": { "type": "string" },
+        "cashierName": { "type": "string" }
+      },
+      "required": ["id", "invoiceNo", "date", "customer", "paymentMethod", "total", "status"]
+    },
+    "purchase": {
+      "title": "PurchaseOrder",
+      "description": "Restock purchase order record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "poNumber": { "type": "string" },
+        "date": { "type": "string" },
+        "supplier": { "type": "string" },
+        "materialId": { "type": "string" },
+        "materialName": { "type": "string" },
+        "qty": { "type": "number" },
+        "unit": { "type": "string" },
+        "unitPrice": { "type": "number" },
+        "total": { "type": "number" },
+        "paymentStatus": { "type": "string" },
+        "notes": { "type": "string" }
+      },
+      "required": ["id", "poNumber", "date", "materialId", "qty", "unitPrice", "total"]
+    },
+    "expense": {
+      "title": "Expense",
+      "description": "Non-stock operational expense record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "expenseNo": { "type": "string" },
+        "date": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "amount": { "type": "number" },
+        "notes": { "type": "string" }
+      },
+      "required": ["id", "expenseNo", "date", "name", "category", "amount"]
+    },
+    "adjustment": {
+      "title": "StockAdjustment",
+      "description": "Stock opname discrepancy adjustment",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "date": { "type": "string" },
+        "materialId": { "type": "string" },
+        "materialName": { "type": "string" },
+        "unit": { "type": "string" },
+        "systemStock": { "type": "number" },
+        "actualStock": { "type": "number" },
+        "difference": { "type": "number" },
+        "lossCost": { "type": "number" },
+        "reason": { "type": "string" },
+        "adjustedBy": { "type": "string" }
+      },
+      "required": ["id", "date", "materialId", "actualStock", "difference", "reason"]
+    },
+    "userAccount": {
+      "title": "UserAccount",
+      "description": "Staff and store management credentials and access levels",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "username": { "type": "string" },
+        "password": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "phone": { "type": "string" },
+        "address": { "type": "string" },
+        "joinDate": { "type": "string" },
+        "isActive": { "type": "boolean" }
+      },
+      "required": ["id", "username", "password", "name", "role", "isActive"]
+    },
+    "systemSettings": {
+      "title": "SystemSettings",
+      "description": "Global store settings, categories, and sales targets",
+      "type": "object",
+      "properties": {
+        "storeName": { "type": "string" },
+        "cashierName": { "type": "string" },
+        "menuCategories": { "type": "array" },
+        "materialCategories": { "type": "array" },
+        "salesTargets": { "type": "object" }
+      },
+      "required": ["storeName"]
+    }
+  },
+  "firestore": {
+    "/materials/{materialId}": {
+      "schema": "material",
+      "description": "Raw material inventory documents"
+    },
+    "/menuItems/{menuId}": {
+      "schema": "menuItem",
+      "description": "Menu and BOM catalog documents"
+    },
+    "/transactions/{transactionId}": {
+      "schema": "transaction",
+      "description": "POS checkout records"
+    },
+    "/purchases/{purchaseId}": {
+      "schema": "purchase",
+      "description": "Restock purchasing documents"
+    },
+    "/expenses/{expenseId}": {
+      "schema": "expense",
+      "description": "Operational expense documents"
+    },
+    "/adjustments/{adjustmentId}": {
+      "schema": "adjustment",
+      "description": "Stock opname adjustment records"
+    },
+    "/users/{userId}": {
+      "schema": "userAccount",
+      "description": "User accounts with role-based access control"
+    },
+    "/settings/{settingId}": {
+      "schema": "systemSettings",
+      "description": "Global store settings and targets"
+    }
+  }
+}

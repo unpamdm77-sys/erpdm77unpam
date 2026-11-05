@@ -39,6 +39,7 @@ export const Header: React.FC<HeaderProps> = ({
     currentUser,
     logout,
     config,
+    firestoreStatus,
     cloudSyncStatus,
     lastCloudSyncTime,
     isGoogleConnected,
@@ -121,6 +122,31 @@ export const Header: React.FC<HeaderProps> = ({
             <span>{lowStockCount} Bahan Menipis</span>
           </button>
         )}
+
+        {/* Firebase Cloud Firestore Real-Time Indicator */}
+        <div
+          title={
+            firestoreStatus === 'connected'
+              ? 'Firebase Firestore Database Terhubung: Sinkronisasi Multi-Device Real-Time Aktif'
+              : firestoreStatus === 'connecting'
+              ? 'Menghubungkan ke Firebase Firestore...'
+              : 'Firestore Offline'
+          }
+          className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold shadow-2xs"
+        >
+          <span
+            className={`w-2 h-2 rounded-full ${
+              firestoreStatus === 'connected'
+                ? 'bg-emerald-500 animate-pulse'
+                : firestoreStatus === 'connecting'
+                ? 'bg-amber-500 animate-ping'
+                : 'bg-slate-400'
+            }`}
+          ></span>
+          <span className="hidden sm:inline text-[11px]">
+            {firestoreStatus === 'connected' ? 'Cloud Realtime' : firestoreStatus === 'connecting' ? 'Konek Cloud...' : 'Cloud Offline'}
+          </span>
+        </div>
 
         {/* Google Sheets Live Database Indicator */}
         <button
