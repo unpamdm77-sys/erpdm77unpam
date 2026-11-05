@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useERP } from '../../context/ERPContext';
-import { Menu, Flame, Cloud, Receipt, Bell, User, Users, LogOut } from 'lucide-react';
+import { Menu, Flame, Cloud, Receipt, Bell, User, Users, LogOut, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { UserRole } from '../../types/erp';
 
 interface HeaderProps {
@@ -45,8 +45,22 @@ export const Header: React.FC<HeaderProps> = ({
     isGoogleConnected,
     googleUser,
     isSyncing,
-    lastSyncTime
+    lastSyncTime,
+    isManualSyncing,
+    lastManualSyncTime,
+    triggerManualSync
   } = useERP();
+  const [syncToast, setSyncToast] = useState<string | null>(null);
+
+  const handleManualSyncClick = async () => {
+    setSyncToast(null);
+    const res = await triggerManualSync();
+    setSyncToast(res.message);
+    setTimeout(() => {
+      setSyncToast(null);
+    }, 3500);
+  };
+
   const isSheetConfigured = Boolean(config.googleWebAppUrl && config.googleWebAppUrl.trim().length > 0);
   const lowStockCount = materials.filter(m => m.stock <= m.minStock).length;
 
@@ -123,29 +137,47 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         )}
 
-        {/* Firebase Cloud Firestore Real-Time Indicator */}
-        <div
-          title={
-            firestoreStatus === 'connected'
-              ? 'Firebase Firestore Database Terhubung: Sinkronisasi Multi-Device Real-Time Aktif'
-              : firestoreStatus === 'connecting'
-              ? 'Menghubungkan ke Firebase Firestore...'
-              : 'Firestore Offline'
-          }
-          className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold shadow-2xs"
-        >
-          <span
-            className={`w-2 h-2 rounded-full ${
+        {/* Firebase Cloud Firestore Real-Time Auto & Manual Sync */}
+        <div className="relative">
+          <button
+            onClick={handleManualSyncClick}
+            disabled={isManualSyncing}
+            title={
               firestoreStatus === 'connected'
-                ? 'bg-emerald-500 animate-pulse'
+                ? `Sinkronisasi Otomatis Real-Time AKTIF. Klik untuk sinkronisasi manual sekarang.${lastManualSyncTime ? ` (Terakhir sync: ${lastManualSyncTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })})` : ''}`
+                : 'Koneksi terputus. Klik untuk coba hubungkan dan sinkronkan manual sekarang.'
+            }
+            className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition border cursor-pointer disabled:opacity-60 ${
+              firestoreStatus === 'connected'
+                ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
                 : firestoreStatus === 'connecting'
-                ? 'bg-amber-500 animate-ping'
-                : 'bg-slate-400'
+                ? 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
+                : 'bg-rose-50 text-rose-800 border-rose-300 hover:bg-rose-100'
             }`}
-          ></span>
-          <span className="hidden sm:inline text-[11px]">
-            {firestoreStatus === 'connected' ? 'Cloud Realtime' : firestoreStatus === 'connecting' ? 'Konek Cloud...' : 'Cloud Offline'}
-          </span>
+          >
+            <RefreshCw
+              size={13}
+              className={`${isManualSyncing ? 'animate-spin text-amber-600' : firestoreStatus === 'connected' ? 'text-emerald-600 hover:rotate-180 transition-transform duration-500' : 'text-rose-600'}`}
+            />
+            <span className="hidden sm:inline text-[11px]">
+              {isManualSyncing
+                ? 'Menyinkronkan...'
+                : firestoreStatus === 'connected'
+                ? 'Cloud Otomatis'
+                : 'Sync Terputus'}
+            </span>
+            {firestoreStatus === 'connected' && !isManualSyncing && (
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            )}
+          </button>
+
+          {/* Sync Toast Feedback Popup */}
+          {syncToast && (
+            <div className="absolute right-0 top-full mt-2 w-64 p-2.5 bg-slate-900 text-white rounded-xl shadow-xl text-[11px] font-medium z-50 flex items-start space-x-2 border border-slate-700 animate-in fade-in slide-in-from-top-1 duration-150">
+              <CheckCircle2 size={15} className="text-emerald-400 shrink-0 mt-0.5" />
+              <div className="leading-snug">{syncToast}</div>
+            </div>
+          )}
         </div>
 
         {/* Google Sheets Live Database Indicator */}

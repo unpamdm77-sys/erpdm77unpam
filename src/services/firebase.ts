@@ -96,10 +96,43 @@ export async function testFirestoreConnection(): Promise<boolean> {
 // Real-Time Firestore Sync Methods
 // -------------------------------------------------------------
 
+/**
+ * Recursively remove `undefined` properties so Firestore never receives unsupported field values
+ */
+export function sanitizeForFirestore<T>(data: T): T {
+  if (data === null || data === undefined) {
+    return null as any;
+  }
+  try {
+    const serialized = JSON.stringify(data, (_, value) => (value === undefined ? undefined : value));
+    if (!serialized || serialized === 'undefined') {
+      return null as any;
+    }
+    return JSON.parse(serialized);
+  } catch {
+    if (Array.isArray(data)) {
+      return data
+        .filter(item => item !== undefined)
+        .map(item => sanitizeForFirestore(item)) as any;
+    }
+    if (typeof data === 'object') {
+      const cleaned: any = {};
+      for (const key of Object.keys(data as object)) {
+        const val = (data as any)[key];
+        if (val !== undefined) {
+          cleaned[key] = sanitizeForFirestore(val);
+        }
+      }
+      return cleaned;
+    }
+    return data;
+  }
+}
+
 export async function saveMaterialToFirestore(mat: Material) {
   const path = `materials/${mat.id}`;
   try {
-    await setDoc(doc(db, 'materials', mat.id), mat, { merge: true });
+    await setDoc(doc(db, 'materials', mat.id), sanitizeForFirestore(mat), { merge: true });
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, path);
   }
@@ -117,7 +150,7 @@ export async function deleteMaterialFromFirestore(id: string) {
 export async function saveMenuItemToFirestore(item: MenuItem) {
   const path = `menuItems/${item.id}`;
   try {
-    await setDoc(doc(db, 'menuItems', item.id), item, { merge: true });
+    await setDoc(doc(db, 'menuItems', item.id), sanitizeForFirestore(item), { merge: true });
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, path);
   }
@@ -135,7 +168,7 @@ export async function deleteMenuItemFromFirestore(id: string) {
 export async function saveTransactionToFirestore(trx: Transaction) {
   const path = `transactions/${trx.id}`;
   try {
-    await setDoc(doc(db, 'transactions', trx.id), trx, { merge: true });
+    await setDoc(doc(db, 'transactions', trx.id), sanitizeForFirestore(trx), { merge: true });
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, path);
   }
@@ -144,7 +177,7 @@ export async function saveTransactionToFirestore(trx: Transaction) {
 export async function savePurchaseToFirestore(po: PurchaseOrder) {
   const path = `purchases/${po.id}`;
   try {
-    await setDoc(doc(db, 'purchases', po.id), po, { merge: true });
+    await setDoc(doc(db, 'purchases', po.id), sanitizeForFirestore(po), { merge: true });
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, path);
   }
@@ -162,7 +195,7 @@ export async function deletePurchaseFromFirestore(id: string) {
 export async function saveExpenseToFirestore(exp: Expense) {
   const path = `expenses/${exp.id}`;
   try {
-    await setDoc(doc(db, 'expenses', exp.id), exp, { merge: true });
+    await setDoc(doc(db, 'expenses', exp.id), sanitizeForFirestore(exp), { merge: true });
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, path);
   }
@@ -180,7 +213,7 @@ export async function deleteExpenseFromFirestore(id: string) {
 export async function saveAdjustmentToFirestore(adj: StockAdjustment) {
   const path = `adjustments/${adj.id}`;
   try {
-    await setDoc(doc(db, 'adjustments', adj.id), adj, { merge: true });
+    await setDoc(doc(db, 'adjustments', adj.id), sanitizeForFirestore(adj), { merge: true });
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, path);
   }
@@ -198,7 +231,7 @@ export async function deleteAdjustmentFromFirestore(id: string) {
 export async function saveUserToFirestore(user: UserAccount) {
   const path = `users/${user.id}`;
   try {
-    await setDoc(doc(db, 'users', user.id), user, { merge: true });
+    await setDoc(doc(db, 'users', user.id), sanitizeForFirestore(user), { merge: true });
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, path);
   }
@@ -220,7 +253,7 @@ export async function saveSettingsToFirestore(settings: {
 }) {
   const path = 'settings/store_config';
   try {
-    await setDoc(doc(db, 'settings', 'store_config'), settings, { merge: true });
+    await setDoc(doc(db, 'settings', 'store_config'), sanitizeForFirestore(settings), { merge: true });
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, path);
   }
@@ -243,43 +276,43 @@ export async function seedAllToFirestore(data: {
 }) {
   try {
     // 1. Settings
-    await setDoc(doc(db, 'settings', 'store_config'), {
-      menuCategories: data.menuCategories,
-      materialCategories: data.materialCategories,
-      salesTargets: data.salesTargets,
+    await setDoc(doc(db, 'settings', 'store_config'), sanitizeForFirestore({
+      menuCategories: data.menuCategories || [],
+      materialCategories: data.materialCategories || [],
+      salesTargets: data.salesTargets || {},
       lastUpdated: new Date().toISOString()
-    });
+    }), { merge: true });
 
-    // 2. Materials
+    // 2. Materials, Menu, and Users batch
     const batch = writeBatch(db);
-    data.materials.forEach(m => {
-      batch.set(doc(db, 'materials', m.id), m, { merge: true });
+    (data.materials || []).filter(m => m && m.id).forEach(m => {
+      batch.set(doc(db, 'materials', m.id), sanitizeForFirestore(m), { merge: true });
     });
-    data.menuItems.forEach(mi => {
-      batch.set(doc(db, 'menuItems', mi.id), mi, { merge: true });
+    (data.menuItems || []).filter(mi => mi && mi.id).forEach(mi => {
+      batch.set(doc(db, 'menuItems', mi.id), sanitizeForFirestore(mi), { merge: true });
     });
-    data.users.forEach(u => {
-      batch.set(doc(db, 'users', u.id), u, { merge: true });
+    (data.users || []).filter(u => u && u.id).forEach(u => {
+      batch.set(doc(db, 'users', u.id), sanitizeForFirestore(u), { merge: true });
     });
     await batch.commit();
 
-    // 3. Transactions, purchases, expenses
+    // 3. Transactions, purchases, expenses, adjustments batch
     const batch2 = writeBatch(db);
-    data.transactions.slice(0, 50).forEach(t => {
-      batch2.set(doc(db, 'transactions', t.id), t, { merge: true });
+    (data.transactions || []).filter(t => t && t.id).slice(0, 50).forEach(t => {
+      batch2.set(doc(db, 'transactions', t.id), sanitizeForFirestore(t), { merge: true });
     });
-    data.purchases.forEach(p => {
-      batch2.set(doc(db, 'purchases', p.id), p, { merge: true });
+    (data.purchases || []).filter(p => p && p.id).forEach(p => {
+      batch2.set(doc(db, 'purchases', p.id), sanitizeForFirestore(p), { merge: true });
     });
-    data.expenses.forEach(e => {
-      batch2.set(doc(db, 'expenses', e.id), e, { merge: true });
+    (data.expenses || []).filter(e => e && e.id).forEach(e => {
+      batch2.set(doc(db, 'expenses', e.id), sanitizeForFirestore(e), { merge: true });
     });
-    data.adjustments.forEach(a => {
-      batch2.set(doc(db, 'adjustments', a.id), a, { merge: true });
+    (data.adjustments || []).filter(a => a && a.id).forEach(a => {
+      batch2.set(doc(db, 'adjustments', a.id), sanitizeForFirestore(a), { merge: true });
     });
     await batch2.commit();
 
-    return { success: true, message: 'Database berhasil disimpan ke Firebase Cloud Firestore!' };
+    return { success: true, message: 'Database Dimsum Mentai 77 berhasil disinkronkan ke Firebase Cloud Firestore!' };
   } catch (err: any) {
     console.error('Seed to Firestore error:', err);
     return { success: false, message: err?.message || 'Gagal menyimpan ke Firebase Firestore.' };

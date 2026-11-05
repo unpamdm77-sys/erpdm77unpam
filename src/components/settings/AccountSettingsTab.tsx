@@ -20,7 +20,9 @@ import {
   KeyRound,
   X,
   UserCheck,
-  Info
+  Info,
+  Cloud,
+  RefreshCw
 } from 'lucide-react';
 
 interface AccountSettingsTabProps {
@@ -28,11 +30,29 @@ interface AccountSettingsTabProps {
 }
 
 export const AccountSettingsTab: React.FC<AccountSettingsTabProps> = ({ onSwitchTab }) => {
-  const { users, currentUser, addUser, updateUser, deleteUser } = useERP();
+  const {
+    users,
+    currentUser,
+    addUser,
+    updateUser,
+    deleteUser,
+    firestoreStatus,
+    triggerManualSync,
+    isManualSyncing,
+    lastManualSyncTime
+  } = useERP();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<'ALL' | UserRole>('ALL');
   const [showPasswordMap, setShowPasswordMap] = useState<Record<string, boolean>>({});
+  const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
+
+  const handleManualSyncClick = async () => {
+    setSyncFeedback(null);
+    const res = await triggerManualSync();
+    setSyncFeedback(res.message);
+    setTimeout(() => setSyncFeedback(null), 4000);
+  };
   
   // Modal states for Add/Edit
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -268,6 +288,46 @@ export const AccountSettingsTab: React.FC<AccountSettingsTabProps> = ({ onSwitch
           </p>
           <span className="text-[10px] text-slate-500">Frontline Point of Sale</span>
         </div>
+      </div>
+
+      {/* Cloud Multi-Device Real-Time Sync Status & Manual Controls */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 rounded-3xl p-5 text-white border border-slate-800 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-start sm:items-center space-x-3.5">
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0">
+            <Cloud size={24} className={firestoreStatus === 'connected' ? 'text-emerald-400' : 'text-amber-400'} />
+          </div>
+          <div>
+            <div className="flex items-center space-x-2">
+              <h3 className="font-black text-sm text-white">Sinkronisasi Database Multi-Device Real-Time</h3>
+              <span className={`px-2 py-0.5 rounded-full text-[9px] font-black ${firestoreStatus === 'connected' ? 'bg-emerald-500 text-slate-950' : 'bg-amber-400 text-slate-950'}`}>
+                {firestoreStatus === 'connected' ? 'OTOMATIS AKTIF' : 'MENYAMBUNGKAN'}
+              </span>
+            </div>
+            <p className="text-xs text-slate-300 mt-1">
+              Setiap kali kasir bertransaksi atau data staf diubah, database langsung otomatis sinkron ke HP, tablet, & laptop tanpa perlu klik tombol apa pun.
+            </p>
+            {lastManualSyncTime && (
+              <p className="text-[11px] text-amber-300 font-mono mt-0.5">
+                Sinkronisasi manual terakhir: {lastManualSyncTime.toLocaleTimeString('id-ID')} ({lastManualSyncTime.toLocaleDateString('id-ID')})
+              </p>
+            )}
+            {syncFeedback && (
+              <p className="text-[11px] text-emerald-400 font-bold mt-1 animate-in fade-in">
+                ✓ {syncFeedback}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <button
+          onClick={handleManualSyncClick}
+          disabled={isManualSyncing}
+          title="Sinkronkan database sekarang secara manual bila jaringan sempat terputus"
+          className="flex items-center justify-center space-x-2 px-4 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition shrink-0 cursor-pointer disabled:opacity-50 shadow-md"
+        >
+          <RefreshCw size={14} className={isManualSyncing ? 'animate-spin' : ''} />
+          <span>{isManualSyncing ? 'Menyinkronkan...' : 'Sinkronkan Manual'}</span>
+        </button>
       </div>
 
       {/* Filter and Search Bar */}

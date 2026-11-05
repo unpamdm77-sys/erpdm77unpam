@@ -76,7 +76,11 @@ import { collection, onSnapshot, doc } from 'firebase/firestore';
 interface ERPContextType {
   // Firebase Cloud Firestore Real-Time Database
   firestoreStatus: 'connected' | 'connecting' | 'offline';
+  isOnline: boolean;
+  isManualSyncing: boolean;
+  lastManualSyncTime: Date | null;
   pushAllToFirestore: () => Promise<{ success: boolean; message: string }>;
+  triggerManualSync: () => Promise<{ success: boolean; message: string }>;
 
   materials: Material[];
   menuItems: MenuItem[];
@@ -304,6 +308,12 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Firebase Cloud Firestore Real-Time Database State
   const [firestoreStatus, setFirestoreStatus] = useState<'connected' | 'connecting' | 'offline'>('connecting');
+  const [isOnline, setIsOnline] = useState<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
+  const [isManualSyncing, setIsManualSyncing] = useState<boolean>(false);
+  const [lastManualSyncTime, setLastManualSyncTime] = useState<Date | null>(() => {
+    const saved = localStorage.getItem('dm77_last_manual_sync');
+    return saved ? new Date(saved) : null;
+  });
 
   // Cloud Real-Time Database Sync States
   const [cloudSyncStatus, setCloudSyncStatus] = useState<'connected' | 'syncing' | 'offline' | 'error'>(() => {
@@ -697,6 +707,8 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const cloudTrx = snapshot.docs.map(d => d.data() as Transaction);
         cloudTrx.sort((a, b) => (b.date || b.id).localeCompare(a.date || a.id));
         setTransactions(cloudTrx);
+      } else {
+        INITIAL_TRANSACTIONS.forEach(t => saveTransactionToFirestore(t));
       }
     }, err => handleFirestoreError(err, OperationType.LIST, 'transactions'));
 
@@ -706,6 +718,8 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const cloudPurchases = snapshot.docs.map(d => d.data() as PurchaseOrder);
         cloudPurchases.sort((a, b) => (b.date || b.id).localeCompare(a.date || a.id));
         setPurchases(cloudPurchases);
+      } else {
+        INITIAL_PURCHASES.forEach(p => savePurchaseToFirestore(p));
       }
     }, err => handleFirestoreError(err, OperationType.LIST, 'purchases'));
 
@@ -715,6 +729,8 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const cloudExpenses = snapshot.docs.map(d => d.data() as Expense);
         cloudExpenses.sort((a, b) => (b.date || b.id).localeCompare(a.date || a.id));
         setExpenses(cloudExpenses);
+      } else {
+        INITIAL_EXPENSES.forEach(e => saveExpenseToFirestore(e));
       }
     }, err => handleFirestoreError(err, OperationType.LIST, 'expenses'));
 
@@ -759,7 +775,23 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }, err => handleFirestoreError(err, OperationType.GET, 'settings/store_config'));
 
+    // Network Online/Offline Handler
+    const handleOnline = () => {
+      setIsOnline(true);
+      testFirestoreConnection().then(connected => {
+        setFirestoreStatus(connected ? 'connected' : 'offline');
+      });
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      setFirestoreStatus('offline');
+    };
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
     return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
       unsubMaterials();
       unsubMenu();
       unsubTransactions();
@@ -1053,7 +1085,7 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       subtotal: i.menuItem.price * i.qty,
       hppPerUnit: i.calculatedHpp,
       totalHpp: i.calculatedHpp * i.qty,
-      notes: i.notes || notes
+      notes: i.notes || notes || ''
     }));
 
     // 1. Deduct Materials from Inventory via Bill of Materials (BOM)
@@ -1083,18 +1115,18 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       date: dateStr,
       customer: customerName || 'Pelanggan Umum',
       orderType,
-      tableNo: orderType === 'Dine In' ? tableNo : undefined,
+      tableNo: orderType === 'Dine In' ? (tableNo || '-') : '-',
       paymentMethod,
       items: transactionItems,
       subtotal,
       discount,
       total,
-      cashReceived,
-      change,
+      cashReceived: cashReceived !== undefined && cashReceived !== null ? cashReceived : total,
+      change: change !== undefined && change !== null ? change : 0,
       totalHpp,
       grossProfit,
       status: 'COMPLETED',
-      cashierName: config.cashierName,
+      cashierName: config.cashierName || 'Kasir',
       syncedToGoogleSheet: false
     };
 
@@ -1811,6 +1843,72 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
+  const triggerManualSync = async (): Promise<{ success: boolean; message: string }> => {
+    setIsManualSyncing(true);
+    try {
+      const conn = await testFirestoreConnection();
+      if (!conn) {
+        setIsManualSyncing(false);
+        setFirestoreStatus('offline');
+        return {
+          success: false,
+          message: 'Koneksi ke Cloud gagal. Periksa koneksi internet Anda lalu coba lagi.'
+        };
+      }
+      setFirestoreStatus('connected');
+
+      // 1. Sync everything to Firebase Cloud Firestore
+      const firestoreRes = await seedAllToFirestore({
+        materials,
+        menuItems,
+        transactions,
+        purchases,
+        expenses,
+        adjustments,
+        users,
+        menuCategories,
+        materialCategories,
+        salesTargets
+      });
+
+      // 2. Also push to Google Drive Sheets if connected
+      if (isGoogleConnected && spreadsheetId) {
+        try {
+          const token = await getGoogleAccessToken();
+          if (token) {
+            await pushEntireDatabaseToSheets(spreadsheetId, token, {
+              materials,
+              menuItems,
+              transactions,
+              purchases,
+              expenses,
+              adjustments,
+              users
+            });
+          }
+        } catch (e) {
+          console.warn('Google Sheets background sync note:', e);
+        }
+      }
+
+      const now = new Date();
+      setLastManualSyncTime(now);
+      setLastSyncTime(now);
+      localStorage.setItem('dm77_last_manual_sync', now.toISOString());
+      setIsManualSyncing(false);
+
+      return {
+        success: firestoreRes.success,
+        message: firestoreRes.success
+          ? 'Sinkronisasi manual berhasil! Seluruh data transaksi, bahan baku, menu, dan pengaturan telah diselaraskan ke Cloud Firestore.'
+          : firestoreRes.message
+      };
+    } catch (err: any) {
+      setIsManualSyncing(false);
+      return { success: false, message: err?.message || 'Gagal melakukan sinkronisasi manual.' };
+    }
+  };
+
   const resetAllData = () => {
     setMaterials(INITIAL_MATERIALS);
     setMenuItems(INITIAL_MENU_ITEMS);
@@ -1832,7 +1930,11 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     <ERPContext.Provider
       value={{
         firestoreStatus,
+        isOnline,
+        isManualSyncing,
+        lastManualSyncTime,
         pushAllToFirestore,
+        triggerManualSync,
         materials,
         menuItems,
         transactions,

@@ -27,6 +27,9 @@ export const GoogleSheetsConnectModal: React.FC<GoogleSheetsConnectModalProps> =
   const {
     firestoreStatus,
     pushAllToFirestore,
+    triggerManualSync,
+    isManualSyncing,
+    lastManualSyncTime,
     googleUser,
     isGoogleConnected,
     spreadsheetId,
@@ -47,12 +50,13 @@ export const GoogleSheetsConnectModal: React.FC<GoogleSheetsConnectModalProps> =
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [actionMessage, setActionMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [copiedDomain, setCopiedDomain] = useState(false);
   const [isPushingFirestore, setIsPushingFirestore] = useState(false);
 
   const handlePushFirestore = async () => {
     setIsPushingFirestore(true);
     setActionMessage(null);
-    const res = await pushAllToFirestore();
+    const res = await triggerManualSync();
     setIsPushingFirestore(false);
     if (res.success) {
       setActionMessage({ text: res.message, type: 'success' });
@@ -162,22 +166,28 @@ export const GoogleSheetsConnectModal: React.FC<GoogleSheetsConnectModalProps> =
                 <div className="flex items-center space-x-2">
                   <h4 className="font-bold text-xs text-white">Firebase Cloud Firestore Real-Time</h4>
                   <span className={`px-2 py-0.5 rounded-full text-[9px] font-black ${firestoreStatus === 'connected' ? 'bg-emerald-500 text-slate-950' : 'bg-amber-400 text-slate-950'}`}>
-                    {firestoreStatus === 'connected' ? 'AKTIF & SINKRON' : 'MENGHUBUNGKAN'}
+                    {firestoreStatus === 'connected' ? 'OTOMATIS AKTIF' : 'MENGHUBUNGKAN'}
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-300 mt-0.5">
-                  Database cloud multi-device untuk kasir, supervisor, dan owner.
+                  Setiap transaksi, stok, dan menu langsung tersimpan otomatis ke cloud tanpa perlu klik sinkronisasi.
                 </p>
+                {lastManualSyncTime && (
+                  <p className="text-[10px] text-slate-400 mt-0.5 font-mono">
+                    Sinkronisasi manual terakhir: {lastManualSyncTime.toLocaleTimeString('id-ID')}
+                  </p>
+                )}
               </div>
             </div>
 
             <button
               onClick={handlePushFirestore}
-              disabled={isPushingFirestore}
+              disabled={isPushingFirestore || isManualSyncing}
+              title="Gunakan untuk sinkronisasi manual jika koneksi internet sempat terputus"
               className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition flex items-center justify-center space-x-1.5 shrink-0 cursor-pointer disabled:opacity-50"
             >
-              <RefreshCw size={13} className={isPushingFirestore ? 'animate-spin' : ''} />
-              <span>{isPushingFirestore ? 'Menyimpan...' : 'Sync ke Firestore'}</span>
+              <RefreshCw size={13} className={isPushingFirestore || isManualSyncing ? 'animate-spin' : ''} />
+              <span>{isPushingFirestore || isManualSyncing ? 'Menyinkronkan...' : 'Sinkronkan Manual'}</span>
             </button>
           </div>
 
@@ -204,6 +214,71 @@ export const GoogleSheetsConnectModal: React.FC<GoogleSheetsConnectModalProps> =
             <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl text-xs flex items-center space-x-2">
               <AlertCircle size={16} className="shrink-0 text-rose-500" />
               <span>{syncError}</span>
+            </div>
+          )}
+
+          {/* Unauthorized Domain Resolution Guide */}
+          {((actionMessage?.type === 'error' && (actionMessage.text.includes('unauthorized-domain') || actionMessage.text.includes('Authorized Domains'))) ||
+            (syncError && (syncError.includes('unauthorized-domain') || syncError.includes('Authorized Domains')))) && (
+            <div className="p-4 bg-amber-50/90 border border-amber-300 rounded-2xl space-y-3 text-xs text-amber-950 shadow-xs animate-in fade-in duration-200">
+              <div className="flex items-center space-x-2 font-black text-amber-900 text-sm">
+                <AlertCircle size={18} className="text-amber-600 shrink-0" />
+                <span>Domain Aplikasi Belum Didaftarkan di Firebase Console</span>
+              </div>
+              <p className="leading-relaxed text-slate-700 text-xs">
+                Firebase Authentication mewajibkan setiap domain web didaftarkan ke <strong>Authorized Domains</strong> agar fitur popup Google Sign-In diizinkan berjalan secara aman.
+              </p>
+
+              <div className="p-3 bg-white rounded-xl border border-amber-200 space-y-2">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="font-bold text-slate-700">Domain Aplikasi Anda:</span>
+                  <button
+                    onClick={() => {
+                      if (typeof window !== 'undefined') {
+                        navigator.clipboard.writeText(window.location.hostname);
+                        setCopiedDomain(true);
+                        setTimeout(() => setCopiedDomain(false), 2000);
+                      }
+                    }}
+                    className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold cursor-pointer transition"
+                  >
+                    {copiedDomain ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
+                    <span>{copiedDomain ? 'Berhasil Disalin!' : 'Salin Domain'}</span>
+                  </button>
+                </div>
+                <div className="p-2 bg-slate-50 border border-slate-200 rounded-lg font-mono text-xs text-slate-900 font-bold break-all select-all">
+                  {typeof window !== 'undefined' ? window.location.hostname : 'run.app'}
+                </div>
+              </div>
+
+              <div className="space-y-1.5 text-xs text-slate-700">
+                <p className="font-bold text-slate-900">Cara mengatasinya (Hanya butuh 30 detik):</p>
+                <ol className="list-decimal list-inside space-y-1.5 pl-1 text-[11px]">
+                  <li>Klik tombol kuning <strong>"Buka Firebase Console"</strong> di bawah.</li>
+                  <li>Di halaman pengaturan Firebase, scroll ke bagian <strong>Authorized domains</strong> lalu klik <strong>Add domain</strong>.</li>
+                  <li>Paste domain di atas (tambahkan juga <code className="bg-amber-100 px-1 py-0.5 rounded text-amber-900 font-mono">run.app</code> & <code className="bg-amber-100 px-1 py-0.5 rounded text-amber-900 font-mono">vercel.app</code>) lalu klik <strong>Save</strong>.</li>
+                  <li>Kembali ke aplikasi ini dan klik <strong>"Masuk dengan Google"</strong>.</li>
+                </ol>
+              </div>
+
+              <div className="pt-1">
+                <a
+                  href="https://console.firebase.google.com/project/gen-lang-client-0989370800/authentication/settings"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center space-x-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition shadow-xs"
+                >
+                  <span>Buka Firebase Console Settings (Authorized Domains)</span>
+                  <ExternalLink size={14} />
+                </a>
+              </div>
+
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-950 flex items-start space-x-2.5">
+                <CheckCircle2 size={17} className="text-emerald-600 shrink-0 mt-0.5" />
+                <div className="space-y-0.5 text-[11px] leading-relaxed">
+                  <span className="font-black text-emerald-900">Kabar Baik:</span> Database Real-Time Cloud Dimsum Mentai 77 Anda <strong>SUDAH AKTIF 100%</strong> melalui <strong>Firebase Cloud Firestore</strong>! Seluruh transaksi POS kasir, restock, stok opname, dan menu sudah langsung sinkron antar-perangkat tanpa perlu login Google sekalipun.
+                </div>
+              </div>
             </div>
           )}
 

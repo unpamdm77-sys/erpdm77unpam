@@ -66,6 +66,10 @@ export const googleSignIn = async (): Promise<{ user: User; accessToken: string 
     return { user: result.user, accessToken: cachedAccessToken };
   } catch (error: any) {
     console.error('Google Sign In Error:', error);
+    if (error?.code === 'auth/unauthorized-domain') {
+      const currentDomain = typeof window !== 'undefined' ? window.location.hostname : 'domain aplikasi';
+      throw new Error(`Domain '${currentDomain}' belum didaftarkan di Authorized Domains Firebase Authentication project gen-lang-client-0989370800.`);
+    }
     throw error;
   } finally {
     isSigningIn = false;
