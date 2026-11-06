@@ -58,6 +58,7 @@ import {
   saveMenuItemToFirestore,
   deleteMenuItemFromFirestore,
   saveTransactionToFirestore,
+  deleteTransactionFromFirestore,
   savePurchaseToFirestore,
   deletePurchaseFromFirestore,
   saveExpenseToFirestore,
@@ -153,10 +154,12 @@ interface ERPContextType {
 
   // Purchasing
   addPurchase: (po: Omit<PurchaseOrder, 'id' | 'poNumber' | 'date' | 'total'> & { date?: string }) => Promise<void>;
+  updatePurchase: (id: string, updates: Partial<PurchaseOrder>) => Promise<void>;
   deletePurchase: (id: string) => void;
 
   // Expenses
   addExpense: (exp: Omit<Expense, 'id' | 'expenseNo' | 'date'> & { date?: string }) => Promise<void>;
+  updateExpense: (id: string, updates: Partial<Expense>) => Promise<void>;
   deleteExpense: (id: string) => void;
 
   // Stock Adjustment
@@ -170,6 +173,7 @@ interface ERPContextType {
 
   // History & Refund
   refundTransaction: (transactionId: string) => void;
+  deleteTransaction: (transactionId: string, restoreStock?: boolean) => void;
 
   // Google Sheets Workspace Realtime Database (1-Click Google Drive Sync)
   googleUser: FirebaseUser | null;
@@ -1264,6 +1268,51 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const updatePurchase = async (id: string, updates: Partial<PurchaseOrder>) => {
+    const existing = purchases.find(p => p.id === id);
+    if (!existing) return;
+
+    const newQty = updates.qty !== undefined ? updates.qty : existing.qty;
+    const newUnitPrice = updates.unitPrice !== undefined ? updates.unitPrice : existing.unitPrice;
+    const newTotal = newQty * newUnitPrice;
+
+    // Adjust raw material stock & cost if qty or unitPrice changed
+    if (newQty !== existing.qty || newUnitPrice !== existing.unitPrice) {
+      const qtyDiff = newQty - existing.qty;
+      setMaterials(prev =>
+        prev.map(mat => {
+          if (mat.id === existing.materialId) {
+            const currentTotalVal = mat.stock * mat.costPerUnit;
+            const adjustmentVal = (newQty * newUnitPrice) - (existing.qty * existing.unitPrice);
+            const newStock = Math.max(0, mat.stock + qtyDiff);
+            const newAvgCost = newStock > 0 ? Math.round((currentTotalVal + adjustmentVal) / newStock) : newUnitPrice;
+
+            const updatedMat = {
+              ...mat,
+              stock: newStock,
+              costPerUnit: Math.max(1, newAvgCost),
+              lastUpdated: new Date().toISOString().slice(0, 10)
+            };
+            saveMaterialToFirestore(updatedMat);
+            return updatedMat;
+          }
+          return mat;
+        })
+      );
+    }
+
+    const updatedPO: PurchaseOrder = {
+      ...existing,
+      ...updates,
+      qty: newQty,
+      unitPrice: newUnitPrice,
+      total: newTotal
+    };
+
+    setPurchases(prev => prev.map(p => (p.id === id ? updatedPO : p)));
+    savePurchaseToFirestore(updatedPO);
+  };
+
   const deletePurchase = (id: string) => {
     setPurchases(prev => prev.filter(p => p.id !== id));
     deletePurchaseFromFirestore(id);
@@ -1309,6 +1358,19 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       });
     }
+  };
+
+  const updateExpense = async (id: string, updates: Partial<Expense>) => {
+    const existing = expenses.find(e => e.id === id);
+    if (!existing) return;
+
+    const updatedExp: Expense = {
+      ...existing,
+      ...updates
+    };
+
+    setExpenses(prev => prev.map(e => (e.id === id ? updatedExp : e)));
+    saveExpenseToFirestore(updatedExp);
   };
 
   const deleteExpense = (id: string) => {
@@ -1426,6 +1488,34 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return t;
       })
     );
+  };
+
+  // Delete Transaction Permanently (with optional stock restoration)
+  const deleteTransaction = (transactionId: string, restoreStock: boolean = true) => {
+    const trx = transactions.find(t => t.id === transactionId);
+    if (!trx) return;
+
+    if (restoreStock && trx.status === 'COMPLETED') {
+      setMaterials(currentMaterials => {
+        const updated = currentMaterials.map(m => ({ ...m }));
+        trx.items.forEach(tItem => {
+          const menuItem = menuItems.find(m => m.name === tItem.name);
+          if (menuItem && menuItem.recipe) {
+            menuItem.recipe.forEach(recipeIng => {
+              const target = updated.find(m => m.id === recipeIng.materialId);
+              if (target) {
+                target.stock += recipeIng.qty * tItem.qty;
+                saveMaterialToFirestore(target);
+              }
+            });
+          }
+        });
+        return updated;
+      });
+    }
+
+    setTransactions(prev => prev.filter(t => t.id !== transactionId));
+    deleteTransactionFromFirestore(transactionId);
   };
 
   // Materials CRUD
@@ -1990,12 +2080,15 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateMenuItem,
         deleteMenuItem,
         addPurchase,
+        updatePurchase,
         deletePurchase,
         addExpense,
+        updateExpense,
         deleteExpense,
         addAdjustment,
         deleteAdjustment,
         refundTransaction,
+        deleteTransaction,
         cloudSyncStatus,
         lastCloudSyncTime,
         pullFromGoogleSheet,

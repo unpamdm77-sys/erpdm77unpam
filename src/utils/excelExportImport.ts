@@ -222,7 +222,72 @@ export function downloadBOMTemplate() {
   XLSX.writeFile(wb, 'Template_Import_BOM_Resep_DIMSUM77.xlsx');
 }
 
-// 4. Master Template with 3 Sheets in One Workbook
+// 4. Template Download: Purchasing PO Restock
+export function downloadPurchasingTemplate() {
+  const sampleData = [
+    {
+      'No. PO': 'PO-2026-001',
+      'Tanggal': new Date().toISOString().slice(0, 10),
+      'Supplier': 'Supplier Frozen UNPAM',
+      'Kode / Nama Bahan': 'Dimsum Ayam Beku (Frozen)',
+      'Qty Masuk': 500,
+      'Satuan': 'pcs',
+      'Harga Satuan': 1200,
+      'Status Bayar': 'LUNAS',
+      'Catatan': 'Faktur No. INV-78891'
+    },
+    {
+      'No. PO': 'PO-2026-002',
+      'Tanggal': new Date().toISOString().slice(0, 10),
+      'Supplier': 'CV Mentai Rasa Jaya',
+      'Kode / Nama Bahan': 'Saus Mentai Special 77',
+      'Qty Masuk': 5000,
+      'Satuan': 'gram',
+      'Harga Satuan': 85,
+      'Status Bayar': 'LUNAS',
+      'Catatan': 'Batch exp. 2027'
+    }
+  ];
+
+  const ws = XLSX.utils.json_to_sheet(sampleData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Pembelian_PO');
+  XLSX.writeFile(wb, 'Template_Import_Purchasing_PO_DIMSUM77.xlsx');
+}
+
+// 5. Template Download: Beban Operasional Non-Stok
+export function downloadExpenseTemplate() {
+  const sampleData = [
+    {
+      'Nama Pengeluaran': 'Gas LPG 3kg untuk Kukusan',
+      'Kategori': 'Gas LPG',
+      'Tanggal': new Date().toISOString().slice(0, 10),
+      'Nominal Biaya': 22000,
+      'Catatan Operasional': 'Toko Gas Berkah Viktor'
+    },
+    {
+      'Nama Pengeluaran': 'Es Batu Kristal 1 Karung',
+      'Kategori': 'Operasional',
+      'Tanggal': new Date().toISOString().slice(0, 10),
+      'Nominal Biaya': 15000,
+      'Catatan Operasional': 'Depot Es Batu Pamulang'
+    },
+    {
+      'Nama Pengeluaran': 'Token Listrik Booth Outlet',
+      'Kategori': 'Listrik & Air',
+      'Tanggal': new Date().toISOString().slice(0, 10),
+      'Nominal Biaya': 50000,
+      'Catatan Operasional': 'PLN No. Meter 142239'
+    }
+  ];
+
+  const ws = XLSX.utils.json_to_sheet(sampleData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Beban_Operasional');
+  XLSX.writeFile(wb, 'Template_Import_Beban_Operasional_DIMSUM77.xlsx');
+}
+
+// 6. Master Template with 5 Comprehensive Sheets in One Workbook
 export function downloadCompleteMasterTemplate() {
   const wb = XLSX.utils.book_new();
 
@@ -253,7 +318,19 @@ export function downloadCompleteMasterTemplate() {
   ];
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(bomSample), 'BOM_Resep');
 
-  XLSX.writeFile(wb, 'Master_Template_ERP_DIMSUM77.xlsx');
+  // Sheet 4: Pembelian_PO
+  const poSample = [
+    { 'No. PO': 'PO-2026-001', 'Tanggal': new Date().toISOString().slice(0, 10), 'Supplier': 'Supplier Dimsum Fresh', 'Kode / Nama Bahan': 'Dimsum Ayam Kukus Mentah (Pcs)', 'Qty Masuk': 500, 'Satuan': 'pcs', 'Harga Satuan': 1750, 'Status Bayar': 'LUNAS', 'Catatan': 'Pengiriman Pagi' }
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(poSample), 'Pembelian_PO');
+
+  // Sheet 5: Beban_Operasional
+  const expSample = [
+    { 'Nama Pengeluaran': 'Gas LPG 3kg', 'Kategori': 'Gas LPG', 'Tanggal': new Date().toISOString().slice(0, 10), 'Nominal Biaya': 22000, 'Catatan Operasional': 'Warung Gas Viktor' }
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(expSample), 'Beban_Operasional');
+
+  XLSX.writeFile(wb, 'Master_Template_Lengkap_ERP_DIMSUM77.xlsx');
 }
 
 // Parse uploaded Excel or CSV file (supports multi-sheet inspection)

@@ -219,24 +219,24 @@ export const AccountSettingsTab: React.FC<AccountSettingsTabProps> = ({ onSwitch
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="bg-slate-900 text-white rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden">
-        <div className="absolute right-0 top-0 bottom-0 w-80 bg-gradient-to-l from-amber-500/20 to-transparent pointer-events-none"></div>
+      <div className="bg-gradient-to-r from-blue-750 via-blue-800 to-slate-900 text-white rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden bg-blue-900">
+        <div className="absolute right-0 top-0 bottom-0 w-80 bg-gradient-to-l from-blue-400/20 to-transparent pointer-events-none"></div>
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
           <div className="flex items-center space-x-4">
-            <div className="w-14 h-14 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center font-black shadow-lg shadow-amber-500/30">
+            <div className="w-14 h-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-black shadow-lg shadow-blue-500/30">
               <Shield size={28} />
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h2 className="text-xl md:text-2xl font-black text-amber-400">
+                <h2 className="text-xl md:text-2xl font-black text-white">
                   Setting Akun & Kredensial Staf
                 </h2>
-                <span className="px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black text-[10px]">
+                <span className="px-2.5 py-0.5 rounded-full bg-blue-500 text-white font-black text-[10px]">
                   KHUSUS OWNER
                 </span>
               </div>
-              <p className="text-xs text-slate-300 mt-1 max-w-xl">
+              <p className="text-xs text-blue-100/80 mt-1 max-w-xl">
                 Kelola nama pengguna (username), kata sandi (password), kontak, dan hak akses karyawan Dimsum Mentai 77 UNPAM.
               </p>
             </div>
@@ -244,7 +244,7 @@ export const AccountSettingsTab: React.FC<AccountSettingsTabProps> = ({ onSwitch
 
           <button
             onClick={handleOpenAdd}
-            className="flex items-center space-x-2 px-5 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-2xl shadow-md transition self-start md:self-auto cursor-pointer"
+            className="flex items-center space-x-2 px-5 py-3 bg-white hover:bg-blue-50 text-blue-900 font-black text-xs rounded-2xl shadow-md transition self-start md:self-auto cursor-pointer"
           >
             <UserPlus size={16} />
             <span>Tambah Akun Baru</span>
@@ -629,7 +629,7 @@ export const AccountSettingsTab: React.FC<AccountSettingsTabProps> = ({ onSwitch
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs shadow-xs transition"
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-xs shadow-xs transition"
                 >
                   {editingUserId ? 'Simpan Perubahan' : 'Buat Akun'}
                 </button>

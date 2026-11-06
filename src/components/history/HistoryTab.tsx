@@ -68,7 +68,7 @@ export const HistoryTab: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="p-2 bg-amber-100 text-amber-700 rounded-xl">
+            <span className="p-2 bg-blue-100 text-blue-700 rounded-xl">
               <Receipt size={20} />
             </span>
             <h2 className="text-xl font-black text-slate-900 tracking-tight">
@@ -103,7 +103,7 @@ export const HistoryTab: React.FC = () => {
                 onClick={() => setSelectedMethod(m)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
                   selectedMethod === m
-                    ? 'bg-amber-500 text-slate-950'
+                    ? 'bg-blue-600 text-white'
                     : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
                 }`}
               >
@@ -119,7 +119,7 @@ export const HistoryTab: React.FC = () => {
               placeholder="Cari no nota, customer, menu..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
         </div>

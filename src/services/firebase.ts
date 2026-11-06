@@ -174,6 +174,15 @@ export async function saveTransactionToFirestore(trx: Transaction) {
   }
 }
 
+export async function deleteTransactionFromFirestore(id: string) {
+  const path = `transactions/${id}`;
+  try {
+    await deleteDoc(doc(db, 'transactions', id));
+  } catch (err) {
+    handleFirestoreError(err, OperationType.DELETE, path);
+  }
+}
+
 export async function savePurchaseToFirestore(po: PurchaseOrder) {
   const path = `purchases/${po.id}`;
   try {

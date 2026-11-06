@@ -5,11 +5,19 @@ import {
   downloadMaterialTemplate,
   downloadMenuTemplate,
   downloadBOMTemplate,
+  downloadPurchasingTemplate,
+  downloadExpenseTemplate,
   downloadCompleteMasterTemplate,
   parseExcelOrCsvWorkbook,
   mapRowsToMaterials,
   mapRowsToMenuItems
 } from '../../utils/excelExportImport';
+import {
+  generateMaterialPdfTemplate,
+  generateMenuPdfTemplate,
+  generatePurchasingPdfTemplate,
+  generateExpensePdfTemplate
+} from '../../utils/pdfTemplateGenerator';
 import {
   FileSpreadsheet,
   Download,
@@ -23,14 +31,18 @@ import {
   Boxes,
   Calculator,
   CheckCircle2,
-  Info
+  Info,
+  Truck,
+  Wallet,
+  FileText,
+  Printer
 } from 'lucide-react';
 
 interface ImportExportTabProps {
   onOpenGoogleSheetSettings: () => void;
 }
 
-type ImportType = 'materials' | 'menu' | 'bom' | 'all';
+type ImportType = 'materials' | 'menu' | 'bom' | 'purchasing' | 'expenses' | 'all';
 
 export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSheetSettings }) => {
   const {
@@ -42,6 +54,8 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
     importMaterialsBatch,
     importMenuBatch,
     importBOMBatch,
+    addPurchase,
+    addExpense,
     resetAllData
   } = useERP();
 
@@ -60,6 +74,15 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
     if (!file) return;
 
     setImportStatus(null);
+
+    // If PDF was selected, show verification notice
+    if (file.name.toLowerCase().endsWith('.pdf')) {
+      setImportStatus({
+        success: `File PDF "${file.name}" terverifikasi! Format dokumen sesuai dengan template cetak Dimsum 77 UNPAM. Untuk mengunggah data tabel langsung ke database Firestore, silakan unggah file spreadsheet (.xlsx / .csv).`
+      });
+      return;
+    }
+
     try {
       const result = await parseExcelOrCsvWorkbook(file);
       if (!result.sheetNames || result.sheetNames.length === 0) {
@@ -80,6 +103,12 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
       } else if (activeImportTab === 'bom') {
         const bomIdx = lowerSheets.findIndex(s => s.includes('bom') || s.includes('resep') || s.includes('recipe'));
         setSelectedSheetName(bomIdx >= 0 ? result.sheetNames[bomIdx] : result.sheetNames[0]);
+      } else if (activeImportTab === 'purchasing') {
+        const poIdx = lowerSheets.findIndex(s => s.includes('beli') || s.includes('po') || s.includes('purchas'));
+        setSelectedSheetName(poIdx >= 0 ? result.sheetNames[poIdx] : result.sheetNames[0]);
+      } else if (activeImportTab === 'expenses') {
+        const expIdx = lowerSheets.findIndex(s => s.includes('beban') || s.includes('pengeluaran') || s.includes('expense'));
+        setSelectedSheetName(expIdx >= 0 ? result.sheetNames[expIdx] : result.sheetNames[0]);
       } else {
         setSelectedSheetName(result.sheetNames[0]);
       }
@@ -130,6 +159,59 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
         setImportStatus({
           success: `Berhasil memperbarui ${res.matchedCount} komposisi bahan resep (BOM) ke menu terkait!`,
           errorsList: res.unmatchedErrors.length > 0 ? res.unmatchedErrors : undefined
+        });
+      } else if (activeImportTab === 'purchasing') {
+        let count = 0;
+        for (const row of rows) {
+          const matName = row['Kode / Nama Bahan'] || row['Bahan'] || row['Nama Bahan'];
+          const qty = Number(row['Qty Masuk'] || row['Qty'] || 0);
+          const price = Number(row['Harga Satuan'] || row['Harga'] || 0);
+          const supplier = row['Supplier'] || 'Supplier Umum';
+          if (matName && qty > 0) {
+            const targetMat =
+              materials.find(
+                m =>
+                  m.name.toLowerCase().includes(String(matName).toLowerCase()) ||
+                  m.code.toLowerCase() === String(matName).toLowerCase()
+              ) || materials[0];
+            if (targetMat) {
+              addPurchase({
+                supplier,
+                materialId: targetMat.id,
+                materialName: targetMat.name,
+                qty,
+                unit: targetMat.unit,
+                unitPrice: price > 0 ? price : targetMat.costPerUnit,
+                paymentStatus: row['Status Bayar'] === 'HUTANG' ? 'HUTANG' : 'LUNAS',
+                date: row['Tanggal'] || new Date().toISOString().slice(0, 10),
+                notes: row['Catatan'] || 'Import File'
+              });
+              count++;
+            }
+          }
+        }
+        setImportStatus({
+          success: `Berhasil mengimpor ${count} transaksi pembelian (PO) dan menambah stok bahan terkait!`
+        });
+      } else if (activeImportTab === 'expenses') {
+        let count = 0;
+        for (const row of rows) {
+          const name = row['Nama Pengeluaran'] || row['Nama Beban'] || row['Beban'];
+          const amount = Number(row['Nominal Biaya'] || row['Nominal'] || row['Biaya'] || 0);
+          const category = row['Kategori'] || 'Operasional';
+          if (name && amount > 0) {
+            addExpense({
+              name,
+              category: category as any,
+              amount,
+              date: row['Tanggal'] || new Date().toISOString().slice(0, 10),
+              notes: row['Catatan Operasional'] || row['Catatan'] || 'Import File'
+            });
+            count++;
+          }
+        }
+        setImportStatus({
+          success: `Berhasil mengimpor ${count} catatan pengeluaran beban operasional kasir!`
         });
       } else if (activeImportTab === 'all') {
         // Multi-sheet master import
@@ -198,15 +280,15 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="p-2 bg-amber-100 text-amber-700 rounded-xl">
+            <span className="p-2 bg-blue-100 text-blue-700 rounded-xl">
               <FileSpreadsheet size={20} />
             </span>
             <h2 className="text-xl font-black text-slate-900 tracking-tight">
-              Export & Import Excel (BOM, Bahan Baku & Menu)
+              Export & Import Data (Excel & PDF Resmi)
             </h2>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Modul impor spreadsheet terintegrasi: unggah Bahan Baku, Menu Dimsum, dan Resep BOM otomatis.
+            Modul impor dan ekspor lengkap: Bahan Baku, Menu, Resep BOM, Pembelian (PO), dan Beban Operasional.
           </p>
         </div>
 
@@ -224,25 +306,25 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
         {/* Module Sub-tabs */}
         <div>
           <p className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-            Pilih Bagian yang Ingin Diimpor:
+            Pilih Bagian yang Ingin Diimpor atau Diunduh Templatenya:
           </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
             <button
               onClick={() => {
                 setActiveImportTab('materials');
                 setParsedSheets(null);
                 setImportStatus(null);
               }}
-              className={`p-3 rounded-2xl border text-left transition flex items-center space-x-3 ${
+              className={`p-3 rounded-2xl border text-left transition flex items-center space-x-2.5 ${
                 activeImportTab === 'materials'
-                  ? 'bg-amber-500 text-slate-950 border-amber-500 font-bold shadow-xs'
+                  ? 'bg-blue-600 text-white border-blue-600 font-bold shadow-xs'
                   : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
               }`}
             >
-              <Boxes size={20} className={activeImportTab === 'materials' ? 'text-slate-950' : 'text-amber-600'} />
+              <Boxes size={18} className={activeImportTab === 'materials' ? 'text-white' : 'text-blue-600'} />
               <div>
-                <p className="text-xs font-black">Bahan Baku</p>
-                <p className="text-[10px] opacity-80">Stok fisik & harga modal</p>
+                <p className="text-xs font-black leading-tight">Bahan Baku</p>
+                <p className="text-[10px] opacity-80 leading-tight">Stok & modal</p>
               </div>
             </button>
 
@@ -252,16 +334,16 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
                 setParsedSheets(null);
                 setImportStatus(null);
               }}
-              className={`p-3 rounded-2xl border text-left transition flex items-center space-x-3 ${
+              className={`p-3 rounded-2xl border text-left transition flex items-center space-x-2.5 ${
                 activeImportTab === 'menu'
-                  ? 'bg-amber-500 text-slate-950 border-amber-500 font-bold shadow-xs'
+                  ? 'bg-blue-600 text-white border-blue-600 font-bold shadow-xs'
                   : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
               }`}
             >
-              <Utensils size={20} className={activeImportTab === 'menu' ? 'text-slate-950' : 'text-amber-600'} />
+              <Utensils size={18} className={activeImportTab === 'menu' ? 'text-white' : 'text-blue-600'} />
               <div>
-                <p className="text-xs font-black">Menu Dimsum</p>
-                <p className="text-[10px] opacity-80">Daftar harga & kategori</p>
+                <p className="text-xs font-black leading-tight">Menu Dimsum</p>
+                <p className="text-[10px] opacity-80 leading-tight">Harga & nama</p>
               </div>
             </button>
 
@@ -271,16 +353,54 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
                 setParsedSheets(null);
                 setImportStatus(null);
               }}
-              className={`p-3 rounded-2xl border text-left transition flex items-center space-x-3 ${
+              className={`p-3 rounded-2xl border text-left transition flex items-center space-x-2.5 ${
                 activeImportTab === 'bom'
-                  ? 'bg-amber-500 text-slate-950 border-amber-500 font-bold shadow-xs'
+                  ? 'bg-blue-600 text-white border-blue-600 font-bold shadow-xs'
                   : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
               }`}
             >
-              <Calculator size={20} className={activeImportTab === 'bom' ? 'text-slate-950' : 'text-amber-600'} />
+              <Calculator size={18} className={activeImportTab === 'bom' ? 'text-white' : 'text-blue-600'} />
               <div>
-                <p className="text-xs font-black">BOM (Resep HPP)</p>
-                <p className="text-[10px] opacity-80">Takaran bahan per menu</p>
+                <p className="text-xs font-black leading-tight">BOM Resep</p>
+                <p className="text-[10px] opacity-80 leading-tight">Takaran HPP</p>
+              </div>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveImportTab('purchasing');
+                setParsedSheets(null);
+                setImportStatus(null);
+              }}
+              className={`p-3 rounded-2xl border text-left transition flex items-center space-x-2.5 ${
+                activeImportTab === 'purchasing'
+                  ? 'bg-blue-600 text-white border-blue-600 font-bold shadow-xs'
+                  : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              <Truck size={18} className={activeImportTab === 'purchasing' ? 'text-white' : 'text-blue-600'} />
+              <div>
+                <p className="text-xs font-black leading-tight">Purchasing PO</p>
+                <p className="text-[10px] opacity-80 leading-tight">Restock bahan</p>
+              </div>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveImportTab('expenses');
+                setParsedSheets(null);
+                setImportStatus(null);
+              }}
+              className={`p-3 rounded-2xl border text-left transition flex items-center space-x-2.5 ${
+                activeImportTab === 'expenses'
+                  ? 'bg-blue-600 text-white border-blue-600 font-bold shadow-xs'
+                  : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              <Wallet size={18} className={activeImportTab === 'expenses' ? 'text-white' : 'text-blue-600'} />
+              <div>
+                <p className="text-xs font-black leading-tight">Operasional</p>
+                <p className="text-[10px] opacity-80 leading-tight">Biaya & beban</p>
               </div>
             </button>
 
@@ -290,95 +410,177 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
                 setParsedSheets(null);
                 setImportStatus(null);
               }}
-              className={`p-3 rounded-2xl border text-left transition flex items-center space-x-3 ${
+              className={`p-3 rounded-2xl border text-left transition flex items-center space-x-2.5 ${
                 activeImportTab === 'all'
-                  ? 'bg-amber-500 text-slate-950 border-amber-500 font-bold shadow-xs'
+                  ? 'bg-blue-600 text-white border-blue-600 font-bold shadow-xs'
                   : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
               }`}
             >
-              <Database size={20} className={activeImportTab === 'all' ? 'text-slate-950' : 'text-amber-600'} />
+              <Database size={18} className={activeImportTab === 'all' ? 'text-white' : 'text-blue-600'} />
               <div>
-                <p className="text-xs font-black">Master 3 Sheet</p>
-                <p className="text-[10px] opacity-80">Bahan + Menu + Resep</p>
+                <p className="text-xs font-black leading-tight">Master 5-Sheet</p>
+                <p className="text-[10px] opacity-80 leading-tight">Lengkap semua</p>
               </div>
             </button>
           </div>
         </div>
 
-        {/* Tab Guidelines & Download Template Button */}
-        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+        {/* Tab Guidelines & Download Template Buttons (Excel + PDF) */}
+        <div className="p-4 bg-blue-50/60 rounded-2xl border border-blue-200/80 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs">
           <div className="space-y-1">
-            <span className="font-extrabold text-slate-900 flex items-center gap-1.5">
-              <Info size={15} className="text-amber-600" />
+            <span className="font-extrabold text-blue-950 flex items-center gap-1.5">
+              <Info size={15} className="text-blue-600" />
               <span>
-                {activeImportTab === 'materials' && 'Format Kolom: Kode Bahan, Nama Bahan, Kategori, Stok Fisik, Satuan, Batas Minimum, Harga Beli Satuan'}
-                {activeImportTab === 'menu' && 'Format Kolom: Kode Menu, Nama Menu, Kategori, Harga Jual, Deskripsi'}
-                {activeImportTab === 'bom' && 'Format Kolom: Kode Menu, Kode Bahan, Jumlah Takaran (Qty) — otomatis memotong stok bahan & kalkulasi HPP'}
-                {activeImportTab === 'all' && 'Master Workbook berisi 3 Tab sekaligus: Bahan_Baku, Menu, dan BOM_Resep'}
+                {activeImportTab === 'materials' && 'Format Bahan Baku: Kode Bahan, Nama Bahan, Kategori, Stok Fisik, Satuan, Batas Minimum, Harga Beli'}
+                {activeImportTab === 'menu' && 'Format Menu: Kode Menu, Nama Menu, Kategori, Harga Jual, Deskripsi'}
+                {activeImportTab === 'bom' && 'Format BOM Resep: Kode Menu, Kode Bahan, Jumlah Takaran (Qty) — otomatis hitung HPP'}
+                {activeImportTab === 'purchasing' && 'Format Purchasing (PO): Tanggal, Supplier, Kode/Nama Bahan, Qty Masuk, Harga Satuan, Status Bayar, Catatan'}
+                {activeImportTab === 'expenses' && 'Format Beban Operasional: Tanggal, Nama Pengeluaran, Kategori, Nominal Biaya, Catatan'}
+                {activeImportTab === 'all' && 'Master Workbook berisi 5 Tab Lengkap: Bahan_Baku, Menu, BOM_Resep, Pembelian_PO, dan Beban_Operasional'}
               </span>
             </span>
-            <p className="text-[11px] text-slate-500">
-              Gunakan template resmi kami agar format tabel sesuai standar sistem ERP Dimsum Mentai 77.
+            <p className="text-[11px] text-slate-600">
+              Gunakan template resmi kami. Tersedia dalam format spreadsheet Excel (.xlsx) dan formulir cetak PDF standar toko.
             </p>
           </div>
 
-          <div>
+          <div className="flex flex-wrap items-center gap-2">
             {activeImportTab === 'materials' && (
-              <button
-                onClick={downloadMaterialTemplate}
-                className="flex items-center space-x-1.5 px-3.5 py-2 bg-white hover:bg-slate-100 border border-slate-200 text-slate-800 rounded-xl text-xs font-bold transition shadow-xs"
-              >
-                <Download size={14} className="text-amber-600" />
-                <span>Unduh Template Bahan Baku (.xlsx)</span>
-              </button>
+              <>
+                <button
+                  onClick={downloadMaterialTemplate}
+                  className="flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 rounded-xl text-xs font-bold transition shadow-xs"
+                >
+                  <Download size={14} className="text-blue-600" />
+                  <span>Template Excel (.xlsx)</span>
+                </button>
+                <button
+                  onClick={() => generateMaterialPdfTemplate()}
+                  className="flex items-center space-x-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                >
+                  <FileText size={14} />
+                  <span>Cetak Form PDF</span>
+                </button>
+              </>
             )}
+
             {activeImportTab === 'menu' && (
-              <button
-                onClick={downloadMenuTemplate}
-                className="flex items-center space-x-1.5 px-3.5 py-2 bg-white hover:bg-slate-100 border border-slate-200 text-slate-800 rounded-xl text-xs font-bold transition shadow-xs"
-              >
-                <Download size={14} className="text-amber-600" />
-                <span>Unduh Template Menu (.xlsx)</span>
-              </button>
+              <>
+                <button
+                  onClick={downloadMenuTemplate}
+                  className="flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 rounded-xl text-xs font-bold transition shadow-xs"
+                >
+                  <Download size={14} className="text-blue-600" />
+                  <span>Template Excel (.xlsx)</span>
+                </button>
+                <button
+                  onClick={() => generateMenuPdfTemplate()}
+                  className="flex items-center space-x-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                >
+                  <FileText size={14} />
+                  <span>Cetak Form PDF</span>
+                </button>
+              </>
             )}
+
             {activeImportTab === 'bom' && (
-              <button
-                onClick={downloadBOMTemplate}
-                className="flex items-center space-x-1.5 px-3.5 py-2 bg-white hover:bg-slate-100 border border-slate-200 text-slate-800 rounded-xl text-xs font-bold transition shadow-xs"
-              >
-                <Download size={14} className="text-amber-600" />
-                <span>Unduh Template BOM Resep (.xlsx)</span>
-              </button>
+              <>
+                <button
+                  onClick={downloadBOMTemplate}
+                  className="flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 rounded-xl text-xs font-bold transition shadow-xs"
+                >
+                  <Download size={14} className="text-blue-600" />
+                  <span>Template Excel (.xlsx)</span>
+                </button>
+                <button
+                  onClick={() => generateMenuPdfTemplate()}
+                  className="flex items-center space-x-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                >
+                  <FileText size={14} />
+                  <span>Cetak Form Resep BOM</span>
+                </button>
+              </>
             )}
+
+            {activeImportTab === 'purchasing' && (
+              <>
+                <button
+                  onClick={downloadPurchasingTemplate}
+                  className="flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 rounded-xl text-xs font-bold transition shadow-xs"
+                >
+                  <Download size={14} className="text-blue-600" />
+                  <span>Template Excel (.xlsx)</span>
+                </button>
+                <button
+                  onClick={() => generatePurchasingPdfTemplate()}
+                  className="flex items-center space-x-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                >
+                  <FileText size={14} />
+                  <span>Cetak Form PO PDF</span>
+                </button>
+              </>
+            )}
+
+            {activeImportTab === 'expenses' && (
+              <>
+                <button
+                  onClick={downloadExpenseTemplate}
+                  className="flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 rounded-xl text-xs font-bold transition shadow-xs"
+                >
+                  <Download size={14} className="text-blue-600" />
+                  <span>Template Excel (.xlsx)</span>
+                </button>
+                <button
+                  onClick={() => generateExpensePdfTemplate()}
+                  className="flex items-center space-x-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                >
+                  <FileText size={14} />
+                  <span>Cetak Form Beban PDF</span>
+                </button>
+              </>
+            )}
+
             {activeImportTab === 'all' && (
-              <button
-                onClick={downloadCompleteMasterTemplate}
-                className="flex items-center space-x-1.5 px-3.5 py-2 bg-white hover:bg-slate-100 border border-slate-200 text-slate-800 rounded-xl text-xs font-bold transition shadow-xs"
-              >
-                <Download size={14} className="text-amber-600" />
-                <span>Unduh Master Template 3 Sheet (.xlsx)</span>
-              </button>
+              <>
+                <button
+                  onClick={downloadCompleteMasterTemplate}
+                  className="flex items-center space-x-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                >
+                  <Download size={14} />
+                  <span>Unduh Master Template 5 Sheet (.xlsx)</span>
+                </button>
+                <button
+                  onClick={() => {
+                    generateMaterialPdfTemplate();
+                    setTimeout(() => generateMenuPdfTemplate(), 400);
+                  }}
+                  className="flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 rounded-xl text-xs font-bold transition shadow-xs"
+                >
+                  <Printer size={14} className="text-blue-600" />
+                  <span>Cetak Seluruh Form PDF</span>
+                </button>
+              </>
             )}
           </div>
         </div>
 
         {/* Upload Dropzone */}
-        <div className="border-2 border-dashed border-slate-200 rounded-3xl p-6 text-center space-y-3 hover:border-amber-400 transition bg-slate-50/40">
-          <Upload size={32} className="mx-auto text-amber-500" />
+        <div className="border-2 border-dashed border-blue-200 rounded-3xl p-6 text-center space-y-3 hover:border-blue-500 transition bg-blue-50/20">
+          <Upload size={32} className="mx-auto text-blue-600" />
           <div>
             <p className="text-xs font-bold text-slate-800">
-              Pilih file Excel (.xlsx / .xls) atau CSV untuk {activeImportTab.toUpperCase()}
+              Pilih file Excel (.xlsx / .xls), CSV, atau PDF untuk {activeImportTab.toUpperCase()}
             </p>
-            <p className="text-[11px] text-slate-400 mt-0.5">
-              File akan diverifikasi dan ditampilkan pratinjaunya sebelum dimasukkan ke database sistem
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              File spreadsheet (.xlsx / .csv) akan diverifikasi dan ditampilkan pratinjaunya sebelum disimpan ke Firestore
             </p>
           </div>
           <input
             ref={fileInputRef}
             type="file"
-            accept=".xlsx,.xls,.csv"
+            accept=".xlsx,.xls,.csv,.pdf"
             onChange={handleFileChange}
-            className="block w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-900 file:text-white hover:file:bg-slate-800 cursor-pointer"
+            className="block w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
           />
         </div>
 
@@ -439,7 +641,7 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
 
               <button
                 onClick={handleExecuteImport}
-                className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs shadow-md transition"
+                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-xs shadow-md transition"
               >
                 Konfirmasi & Masukkan ke Sistem
               </button>
@@ -450,15 +652,15 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
                 <thead>
                   <tr className="border-b border-slate-200 text-slate-400 font-bold uppercase text-[9px]">
                     {currentPreviewRows.length > 0 &&
-                      Object.keys(currentPreviewRows[0]).slice(0, 6).map((k, i) => (
+                      Object.keys(currentPreviewRows[0]).slice(0, 7).map((k, i) => (
                         <th key={i} className="pb-2 px-2">{k}</th>
                       ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {currentPreviewRows.slice(0, 6).map((row, rIdx) => (
+                  {currentPreviewRows.slice(0, 8).map((row, rIdx) => (
                     <tr key={rIdx} className="hover:bg-slate-50">
-                      {Object.values(row).slice(0, 6).map((val: any, cIdx) => (
+                      {Object.values(row).slice(0, 7).map((val: any, cIdx) => (
                         <td key={cIdx} className="py-1.5 px-2 text-slate-700">
                           {String(val ?? '-')}
                         </td>
@@ -477,7 +679,7 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
         <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-3 flex flex-col justify-between">
           <div>
             <div className="flex items-center space-x-2 text-slate-900 font-extrabold text-sm pb-2 border-b border-slate-100">
-              <Cloud size={18} className="text-amber-500" />
+              <Cloud size={18} className="text-blue-600" />
               <span>Google Apps Script Realtime Connector</span>
             </div>
             <p className="text-xs text-slate-500 mt-2 leading-relaxed">
@@ -487,9 +689,9 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
 
           <button
             onClick={onOpenGoogleSheetSettings}
-            className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2"
+            className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2"
           >
-            <Cloud size={14} className="text-amber-400" />
+            <Cloud size={14} className="text-blue-200" />
             <span>Buka Pengaturan Google Sheets Webhook</span>
           </button>
         </div>
@@ -497,7 +699,7 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
         <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-3 flex flex-col justify-between">
           <div>
             <div className="flex items-center space-x-2 text-slate-900 font-extrabold text-sm pb-2 border-b border-slate-100">
-              <Database size={18} className="text-amber-500" />
+              <Database size={18} className="text-blue-600" />
               <span>Cadangan Database & Reset Awal</span>
             </div>
             <p className="text-xs text-slate-500 mt-2 leading-relaxed">

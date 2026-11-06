@@ -250,6 +250,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     name: 'Dimsum Mentai Original (Isi 4)',
     category: 'Dimsum Mentai',
     price: 18000,
+    image: '/src/assets/images/dimsum_mentai_original_1793977235878.jpg',
     description: '4 Pcs dimsum ayam lembut disiram saus mentai gurih creamy lalu ditorch wangi dan ditaburi tobiko.',
     isAvailable: true,
     recipe: [
@@ -266,6 +267,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     name: 'Dimsum Mentai Mozzarella (Isi 4)',
     category: 'Dimsum Mentai',
     price: 22000,
+    image: '/src/assets/images/dimsum_mentai_mozzarella_1793977235926.jpg',
     description: 'Dimsum mentai favorit dengan lumeran keju mozzarella mulur dibakar torch sampai kecoklatan harum.',
     isAvailable: true,
     recipe: [
@@ -283,6 +285,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     name: 'Dimsum Mentai Nori Crunchy (Isi 4)',
     category: 'Dimsum Mentai',
     price: 20000,
+    image: '/src/assets/images/dimsum_mentai_nori_1793977237418.jpg',
     description: 'Perpaduan lezat saus mentai gurih dengan limpahan taburan nori crispy Jepang yang renyah.',
     isAvailable: true,
     recipe: [
@@ -299,6 +302,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     name: 'Dimsum Goreng Mentai Crispy (Isi 4)',
     category: 'Dimsum Goreng',
     price: 19000,
+    image: '/src/assets/images/dimsum_goreng_crispy_1793977238184.jpg',
     description: 'Dimsum ayam goreng keemasan renyah di luar juicy di dalam disiram saus mentai panggang.',
     isAvailable: true,
     recipe: [

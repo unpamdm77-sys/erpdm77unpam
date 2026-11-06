@@ -130,14 +130,14 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ onSwitchTab }) => {
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* Top Banner & Quick Tag */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-slate-900 via-slate-800 to-amber-950 text-white p-6 rounded-3xl shadow-lg border border-amber-500/20">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-blue-700 via-blue-800 to-slate-900 text-white p-6 rounded-3xl shadow-lg border border-blue-500/20">
         <div className="space-y-1">
-          <div className="inline-flex items-center space-x-2 bg-amber-500/20 text-amber-300 px-3 py-1 rounded-full text-xs font-bold border border-amber-500/30">
-            <Flame size={14} className="text-amber-400" />
+          <div className="inline-flex items-center space-x-2 bg-blue-500/20 text-blue-200 px-3 py-1 rounded-full text-xs font-bold border border-blue-400/30">
+            <Flame size={14} className="text-blue-300" />
             <span>Kantin & Kuliner UNPAM Viktor</span>
           </div>
           <h2 className="text-2xl font-black tracking-tight">Dashboard Operasional Dimsum</h2>
-          <p className="text-slate-300 text-xs md:text-sm">
+          <p className="text-blue-100/80 text-xs md:text-sm">
             Pantau penjualan realtime, target omset berkala, stok bahan mentai, dan laba kotor hari ini.
           </p>
         </div>
@@ -145,14 +145,14 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ onSwitchTab }) => {
         <div className="flex flex-wrap items-center gap-2.5">
           <button
             onClick={() => onSwitchTab('pos')}
-            className="flex items-center space-x-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl shadow-md transition text-xs"
+            className="flex items-center space-x-2 bg-white hover:bg-blue-50 text-blue-900 font-black px-4 py-2.5 rounded-xl shadow-md transition text-xs"
           >
             <Receipt size={16} />
             <span>Buka Kasir (POS)</span>
           </button>
           <button
             onClick={() => onSwitchTab('purchasing')}
-            className="flex items-center space-x-2 bg-slate-800 hover:bg-slate-700 text-white font-medium px-4 py-2.5 rounded-xl border border-slate-700 transition text-xs"
+            className="flex items-center space-x-2 bg-blue-900/60 hover:bg-blue-900 text-white font-medium px-4 py-2.5 rounded-xl border border-blue-400/30 transition text-xs"
           >
             <Truck size={16} />
             <span>Restock Bahan</span>
@@ -164,8 +164,8 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ onSwitchTab }) => {
       <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
           <div className="flex items-center space-x-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold">
-              <Target size={22} className="text-amber-500" />
+            <div className="w-10 h-10 rounded-2xl bg-blue-500/10 text-blue-600 flex items-center justify-center font-bold">
+              <Target size={22} className="text-blue-600" />
             </div>
             <div>
               <h3 className="font-black text-slate-900 text-base">Target Penjualan Outlet UNPAM</h3>
@@ -177,7 +177,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ onSwitchTab }) => {
 
           <button
             onClick={handleOpenTargetModal}
-            className="flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-amber-100 text-slate-800 hover:text-amber-900 font-bold text-xs transition self-start sm:self-auto border border-slate-200 hover:border-amber-300"
+            className="flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-blue-50 text-slate-800 hover:text-blue-900 font-bold text-xs transition self-start sm:self-auto border border-slate-200 hover:border-blue-300"
           >
             <Edit3 size={15} />
             <span>Atur Target Penjualan</span>
@@ -186,14 +186,14 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ onSwitchTab }) => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
           {/* Target Harian */}
-          <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-50/70 to-amber-100/30 border border-amber-200/70 space-y-3">
+          <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50/70 to-blue-100/30 border border-blue-200/70 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-black text-amber-900 uppercase tracking-wide">Target Harian</span>
+              <span className="text-xs font-black text-blue-900 uppercase tracking-wide">Target Harian</span>
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
                 dailyProgress >= 100
                   ? 'bg-emerald-500 text-white'
                   : dailyProgress >= 70
-                  ? 'bg-amber-500 text-slate-950'
+                  ? 'bg-blue-600 text-white'
                   : 'bg-slate-200 text-slate-700'
               }`}>
                 {dailyProgress >= 100 ? '🎉 Tercapai!' : `${dailyProgress}%`}
@@ -218,7 +218,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ onSwitchTab }) => {
             <div className="w-full bg-slate-200/80 h-2.5 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-700 ${
-                  dailyProgress >= 100 ? 'bg-emerald-500' : 'bg-gradient-to-r from-amber-500 to-amber-600'
+                  dailyProgress >= 100 ? 'bg-emerald-500' : 'bg-gradient-to-r from-blue-500 to-blue-600'
                 }`}
                 style={{ width: `${Math.min(100, dailyProgress)}%` }}
               ></div>

@@ -8,6 +8,7 @@ import {
   Search,
   Filter,
   Trash2,
+  Edit2,
   Calendar,
   CheckCircle2,
   TrendingDown,
@@ -17,10 +18,11 @@ import {
 } from 'lucide-react';
 
 export const PurchasingTab: React.FC = () => {
-  const { materials, purchases, addPurchase, deletePurchase, currentUser } = useERP();
+  const { materials, purchases, addPurchase, updatePurchase, deletePurchase, currentUser } = useERP();
 
   const [search, setSearch] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingPO, setEditingPO] = useState<PurchaseOrder | null>(null);
 
   // RBAC: Staff cannot edit purchasing
   const canEditPurchasing = currentUser.role !== 'STAFF';
@@ -39,6 +41,7 @@ export const PurchasingTab: React.FC = () => {
 
   const handleOpenAdd = (materialId?: string) => {
     if (!canEditPurchasing) return;
+    setEditingPO(null);
     if (materialId) {
       setSelectedMaterialId(materialId);
       const targetMat = materials.find(m => m.id === materialId);
@@ -53,6 +56,19 @@ export const PurchasingTab: React.FC = () => {
     }
     setQty('');
     setNotes('');
+    setShowAddModal(true);
+  };
+
+  const handleOpenEdit = (po: PurchaseOrder) => {
+    if (!canEditPurchasing) return;
+    setEditingPO(po);
+    setSelectedMaterialId(po.materialId);
+    setSupplier(po.supplier);
+    setQty(po.qty);
+    setUnitPrice(po.unitPrice);
+    setPaymentStatus(po.paymentStatus);
+    setPurchaseDate(po.date);
+    setNotes(po.notes || '');
     setShowAddModal(true);
   };
 
@@ -71,22 +87,33 @@ export const PurchasingTab: React.FC = () => {
 
     try {
       setIsSubmitting(true);
-      await addPurchase({
-        supplier: supplier || 'Supplier Umum',
-        materialId: selectedMaterial.id,
-        materialName: selectedMaterial.name,
-        qty: Number(qty),
-        unit: selectedMaterial.unit,
-        unitPrice: Number(unitPrice),
-        paymentStatus,
-        notes,
-        date: purchaseDate
-      });
+      if (editingPO) {
+        await updatePurchase(editingPO.id, {
+          supplier: supplier || 'Supplier Umum',
+          qty: Number(qty),
+          unitPrice: Number(unitPrice),
+          paymentStatus,
+          notes,
+          date: purchaseDate
+        });
+      } else {
+        await addPurchase({
+          supplier: supplier || 'Supplier Umum',
+          materialId: selectedMaterial.id,
+          materialName: selectedMaterial.name,
+          qty: Number(qty),
+          unit: selectedMaterial.unit,
+          unitPrice: Number(unitPrice),
+          paymentStatus,
+          notes,
+          date: purchaseDate
+        });
+      }
       setIsSubmitting(false);
       setShowAddModal(false);
     } catch (err) {
       setIsSubmitting(false);
-      alert('Gagal mencatat pembelian');
+      alert('Gagal menyimpan perubahan pembelian');
     }
   };
 
@@ -107,7 +134,7 @@ export const PurchasingTab: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="p-2 bg-amber-100 text-amber-700 rounded-xl">
+            <span className="p-2 bg-blue-100 text-blue-700 rounded-xl">
               <Truck size={20} />
             </span>
             <h2 className="text-xl font-black text-slate-900 tracking-tight">
@@ -115,14 +142,14 @@ export const PurchasingTab: React.FC = () => {
             </h2>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Catat invoice pembelian dari supplier, tambah stok otomatis, dan perbarui harga modal rata-rata.
+            Catat invoice pembelian dari supplier, sesuaikan (adjust) faktur yang keliru, dan sinkronkan stok otomatis.
           </p>
         </div>
 
         {canEditPurchasing ? (
           <button
             onClick={() => handleOpenAdd()}
-            className="flex items-center space-x-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-xs transition text-xs"
+            className="flex items-center space-x-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-xs transition text-xs"
           >
             <Plus size={16} />
             <span>+ Catat Belanja Bahan (PO)</span>
@@ -136,10 +163,10 @@ export const PurchasingTab: React.FC = () => {
       </div>
 
       {!canEditPurchasing && (
-        <div className="p-3.5 bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl text-xs flex items-center gap-2">
-          <AlertCircle size={16} className="text-amber-600 shrink-0" />
+        <div className="p-3.5 bg-blue-50 border border-blue-200 text-blue-900 rounded-2xl text-xs flex items-center gap-2">
+          <AlertCircle size={16} className="text-blue-600 shrink-0" />
           <span>
-            <strong>Informasi Akses:</strong> Akun Anda berstatus <strong>STAFF</strong>. Staff kasir dapat melihat riwayat faktur pembelian bahan, tetapi tidak diizinkan membuat atau menghapus data Purchasing. Otorisasi belanja dipegang oleh Kepala Toko / Supervisi, Finance, atau Owner.
+            <strong>Informasi Akses:</strong> Akun Anda berstatus <strong>STAFF</strong>. Staff kasir dapat melihat riwayat faktur pembelian bahan, tetapi tidak diizinkan membuat atau mengubah data Purchasing. Otorisasi belanja dipegang oleh Kepala Toko / Supervisi, Finance, atau Owner.
           </span>
         </div>
       )}
@@ -178,7 +205,7 @@ export const PurchasingTab: React.FC = () => {
               placeholder="Cari No. PO, Supplier, Bahan..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
         </div>
@@ -228,17 +255,26 @@ export const PurchasingTab: React.FC = () => {
                     </td>
                     <td className="py-3 text-right">
                       {canEditPurchasing ? (
-                        <button
-                          onClick={() => {
-                            if (confirm(`Hapus catatan pembelian ${po.poNumber}?`)) {
-                              deletePurchase(po.id);
-                            }
-                          }}
-                          className="text-slate-400 hover:text-rose-600 p-1"
-                          title="Hapus PO"
-                        >
-                          <Trash2 size={15} />
-                        </button>
+                        <div className="flex items-center justify-end space-x-1">
+                          <button
+                            onClick={() => handleOpenEdit(po)}
+                            className="p-1 text-slate-400 hover:text-blue-600 transition"
+                            title="Adjust / Edit Faktur PO"
+                          >
+                            <Edit2 size={15} />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm(`Hapus catatan pembelian ${po.poNumber}?`)) {
+                                deletePurchase(po.id);
+                              }
+                            }}
+                            className="p-1 text-slate-400 hover:text-rose-600 transition"
+                            title="Hapus PO"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
                       ) : (
                         <span className="text-[10px] text-slate-400 italic">-</span>
                       )}
@@ -251,14 +287,16 @@ export const PurchasingTab: React.FC = () => {
         </div>
       </div>
 
-      {/* ADD PURCHASE MODAL */}
+      {/* ADD / EDIT PURCHASE MODAL */}
       {showAddModal && canEditPurchasing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
           <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
             <div className="bg-slate-900 text-white p-5 flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Truck className="text-amber-400" size={20} />
-                <h3 className="font-bold text-base">Catat Pembelian Bahan (Restock)</h3>
+                <Truck className="text-blue-400" size={20} />
+                <h3 className="font-bold text-base">
+                  {editingPO ? `Adjust / Edit Faktur Pembelian (${editingPO.poNumber})` : 'Catat Pembelian Bahan (Restock)'}
+                </h3>
               </div>
               <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-white">
                 ✕
@@ -271,16 +309,22 @@ export const PurchasingTab: React.FC = () => {
                   Pilih Bahan Baku
                 </label>
                 <select
+                  disabled={Boolean(editingPO)}
                   value={selectedMaterialId}
                   onChange={e => handleMaterialChange(e.target.value)}
-                  className="w-full text-xs font-semibold px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-1 focus:ring-amber-500 bg-white"
+                  className="w-full text-xs font-semibold px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white disabled:bg-slate-100 disabled:text-slate-500"
                 >
                   {materials.map(m => (
                     <option key={m.id} value={m.id}>
-                      [{m.code}] {m.name} (Stok Saat Ini: {m.stock} {m.unit})
+                      [{m.code}] {m.name} (Stok: {m.stock} {m.unit})
                     </option>
                   ))}
                 </select>
+                {editingPO && (
+                  <p className="text-[10px] text-slate-400 mt-1 italic">
+                    Bahan baku terkunci pada PO ini. Untuk mengganti bahan, buat PO baru.
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -294,7 +338,7 @@ export const PurchasingTab: React.FC = () => {
                     value={supplier}
                     onChange={e => setSupplier(e.target.value)}
                     placeholder="Contoh: Toko Plastik UNPAM"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
                 <div>
@@ -306,7 +350,7 @@ export const PurchasingTab: React.FC = () => {
                     required
                     value={purchaseDate}
                     onChange={e => setPurchaseDate(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -323,7 +367,7 @@ export const PurchasingTab: React.FC = () => {
                     value={qty}
                     onChange={e => setQty(e.target.value === '' ? '' : Number(e.target.value))}
                     placeholder="Contoh: 100"
-                    className="w-full font-bold px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="w-full font-bold px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
                 <div>
@@ -337,7 +381,7 @@ export const PurchasingTab: React.FC = () => {
                     value={unitPrice}
                     onChange={e => setUnitPrice(e.target.value === '' ? '' : Number(e.target.value))}
                     placeholder="Contoh: 650"
-                    className="w-full font-bold px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="w-full font-bold px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -367,21 +411,24 @@ export const PurchasingTab: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Catatan Tambahan</label>
+                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Catatan Tambahan (Purchasing)</label>
                 <input
                   type="text"
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
-                  placeholder="Misal: Nomor nota supplier / nomor resi"
+                  placeholder="Misal: Nomor nota supplier / nomor resi / keterangan tempo"
                   className="w-full px-3 py-2 rounded-xl border border-slate-300"
                 />
               </div>
 
-              <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200 flex items-center space-x-2 text-[11px] text-amber-900">
-                <CheckCircle2 size={16} className="text-amber-600 shrink-0" />
+              <div className="p-3 bg-blue-50 rounded-2xl border border-blue-200 flex items-center space-x-2 text-[11px] text-blue-900">
+                <CheckCircle2 size={16} className="text-blue-600 shrink-0" />
                 <span>
-                  Stok bahan <strong>{selectedMaterial?.name}</strong> akan otomatis bertambah{' '}
-                  <strong>+{qty || 0} {selectedMaterial?.unit}</strong> setelah disimpan.
+                  {editingPO ? (
+                    <>Penyesuaian (adjust) pada PO ini akan otomatis mengoreksi stok fisik bahan baku dan harga rata-rata secara akurat.</>
+                  ) : (
+                    <>Stok bahan <strong>{selectedMaterial?.name}</strong> akan otomatis bertambah <strong>+{qty || 0} {selectedMaterial?.unit}</strong> setelah disimpan.</>
+                  )}
                 </span>
               </div>
 
@@ -396,9 +443,9 @@ export const PurchasingTab: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-xs"
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-xs"
                 >
-                  {isSubmitting ? 'Menyimpan...' : 'Simpan Pembelian'}
+                  {isSubmitting ? 'Menyimpan...' : (editingPO ? 'Simpan Penyesuaian (Adjust)' : 'Simpan Pembelian')}
                 </button>
               </div>
             </form>

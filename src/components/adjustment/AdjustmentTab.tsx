@@ -71,7 +71,7 @@ export const AdjustmentTab: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="p-2 bg-amber-100 text-amber-700 rounded-xl">
+            <span className="p-2 bg-blue-100 text-blue-700 rounded-xl">
               <Sliders size={20} />
             </span>
             <h2 className="text-xl font-black text-slate-900 tracking-tight">
@@ -85,7 +85,7 @@ export const AdjustmentTab: React.FC = () => {
 
         <button
           onClick={handleOpenAdd}
-          className="flex items-center space-x-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-sm transition text-xs"
+          className="flex items-center space-x-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-sm transition text-xs"
         >
           <Plus size={16} />
           <span>+ Catat Penyesuaian Stok (Opname)</span>
@@ -283,7 +283,7 @@ export const AdjustmentTab: React.FC = () => {
               </div>
 
               {/* Difference and loss indicator */}
-              <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 flex justify-between items-center text-xs">
+              <div className="p-3 bg-blue-50/70 rounded-xl border border-blue-200 flex justify-between items-center text-xs">
                 <div>
                   <span className="font-bold text-slate-800">Selisih Koreksi:</span>
                   <span className={`ml-2 font-black ${difference < 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
@@ -307,7 +307,7 @@ export const AdjustmentTab: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl shadow-md transition"
+                  className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-md transition"
                 >
                   Simpan Koreksi Stok
                 </button>

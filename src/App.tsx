@@ -4,6 +4,7 @@ import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
 import { DashboardTab } from './components/dashboard/DashboardTab';
 import { PosTab } from './components/pos/PosTab';
+import { CashierManagementTab } from './components/cashier/CashierManagementTab';
 import { PurchasingTab } from './components/purchasing/PurchasingTab';
 import { ProductsTab } from './components/products/ProductsTab';
 import { MaterialsTab } from './components/materials/MaterialsTab';

@@ -17,7 +17,8 @@ import {
   Shield,
   Users,
   LogOut,
-  ChevronRight
+  ChevronRight,
+  CreditCard
 } from 'lucide-react';
 import { UserRole } from '../../types/erp';
 
@@ -34,6 +35,7 @@ interface SidebarProps {
 const ALL_NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'pos', label: 'Kasir (POS)', icon: Receipt, highlight: true },
+  { id: 'cashier', label: 'Cashier Management', icon: CreditCard },
   { id: 'purchasing', label: 'Purchasing', icon: ShoppingCart },
   { id: 'products', label: 'Menu & HPP', icon: Utensils },
   { id: 'materials', label: 'Stok Bahan', icon: Boxes },
@@ -101,28 +103,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const content = (
-    <div className="h-full flex flex-col justify-between bg-slate-900 text-white select-none">
+    <div className="h-full flex flex-col justify-between bg-white text-slate-800 select-none border-r border-slate-200">
       {/* Brand Header */}
       <div>
-        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
+        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center font-black shadow-md shadow-amber-500/20">
-              <Flame size={22} className="text-slate-950" />
+            <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-black shadow-md shadow-blue-500/20">
+              <Flame size={22} className="text-white" />
             </div>
             <div>
-              <h1 className="font-black text-base tracking-wide text-amber-400 leading-tight">
+              <h1 className="font-black text-base tracking-wide text-blue-950 leading-tight">
                 DIMSUM MENTAI 77
               </h1>
               <div className="flex items-center space-x-1.5 mt-0.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <p className="text-[10px] text-slate-400 font-medium">UNPAM Viktor & Pusat</p>
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <p className="text-[10px] text-blue-600 font-semibold">UNPAM Viktor & Pusat</p>
               </div>
             </div>
           </div>
           {isMobileOpen && (
             <button
               onClick={onCloseMobile}
-              className="p-1 rounded-lg text-slate-400 hover:text-white md:hidden"
+              className="p-1 rounded-lg text-slate-400 hover:text-slate-800 md:hidden"
             >
               <X size={20} />
             </button>
@@ -142,21 +144,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onSelectTab(item.id);
                   if (isMobileOpen) onCloseMobile();
                 }}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
                   isActive
-                    ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/20'
+                    : 'text-slate-600 hover:bg-blue-50 hover:text-blue-700'
                 }`}
               >
                 <div className="flex items-center space-x-3">
-                  <Icon size={17} className={isActive ? 'text-slate-950' : 'text-slate-400'} />
+                  <Icon size={17} className={isActive ? 'text-white' : 'text-slate-400'} />
                   <span>{item.label}</span>
                 </div>
                 {item.id === 'pos' && !isActive && (
-                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+                  <span className="w-2 h-2 rounded-full bg-blue-600 animate-ping"></span>
                 )}
                 {item.ownerOnly && (
-                  <span className="text-[9px] bg-amber-400/20 text-amber-300 px-1.5 py-0.5 rounded font-black border border-amber-400/30">
+                  <span className={`text-[9px] px-1.5 py-0.5 rounded font-black border ${
+                    isActive
+                      ? 'bg-white/20 text-white border-white/30'
+                      : 'bg-amber-100 text-amber-900 border-amber-300'
+                  }`}>
                     OWNER
                   </span>
                 )}
@@ -167,26 +173,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Bottom Footer & User Profile */}
-      <div className="p-3.5 border-t border-slate-800 space-y-2">
+      <div className="p-3.5 border-t border-slate-100 space-y-2 bg-slate-50/50">
         {/* User Account Bar */}
         <div
           onClick={onOpenAccountSwitcher}
-          className="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 cursor-pointer transition flex items-center justify-between group"
+          className="p-2.5 rounded-xl bg-blue-50/70 hover:bg-blue-100/70 border border-blue-200/70 cursor-pointer transition flex items-center justify-between group"
           title="Klik untuk Beralih Akun"
         >
           <div className="flex items-center space-x-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-full bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs">
               {currentUser.name.charAt(0)}
             </div>
             <div className="min-w-0">
               <div className="flex items-center space-x-1.5">
-                <span className="text-xs font-bold text-slate-200 truncate">{currentUser.name}</span>
+                <span className="text-xs font-bold text-slate-900 truncate">{currentUser.name}</span>
                 {getRoleBadge(currentUser.role)}
               </div>
-              <p className="text-[10px] text-slate-400 font-mono truncate">@{currentUser.username}</p>
+              <p className="text-[10px] text-blue-700 font-mono truncate">@{currentUser.username}</p>
             </div>
           </div>
-          <ChevronRight size={14} className="text-slate-400 group-hover:text-amber-400 transition shrink-0" />
+          <ChevronRight size={14} className="text-slate-400 group-hover:text-blue-600 transition shrink-0" />
         </div>
 
         {/* Logout Button */}
@@ -196,32 +202,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
               logout();
             }
           }}
-          className="w-full py-2 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 hover:text-rose-100 text-left text-xs font-bold flex items-center justify-between transition border border-rose-500/20"
+          className="w-full py-2 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-left text-xs font-bold flex items-center justify-between transition border border-rose-200 cursor-pointer"
         >
           <div className="flex items-center space-x-2">
-            <LogOut size={13} className="text-rose-400" />
+            <LogOut size={13} className="text-rose-500" />
             <span>Keluar Sesi</span>
           </div>
-          <span className="text-[10px] text-rose-400/80 font-mono">Logout &rarr;</span>
+          <span className="text-[10px] text-rose-500 font-mono">Logout &rarr;</span>
         </button>
 
         {/* Google Sheets / Firestore Status button */}
         <button
           onClick={onOpenGoogleSheetSettings}
-          className="w-full p-2.5 rounded-xl bg-slate-800/50 hover:bg-slate-800 text-slate-300 text-left text-[11px] flex items-center justify-between transition border border-slate-800 cursor-pointer"
+          className="w-full p-2.5 rounded-xl bg-white hover:bg-blue-50 text-slate-700 text-left text-[11px] flex items-center justify-between transition border border-slate-200 cursor-pointer shadow-2xs"
         >
           <div className="flex items-center space-x-2 min-w-0">
             <Cloud
               size={13}
               className={
                 firestoreStatus === 'connected' || isGoogleConnected || cloudSyncStatus === 'connected'
-                  ? 'text-emerald-400'
+                  ? 'text-emerald-500'
                   : isSyncing || cloudSyncStatus === 'syncing'
-                  ? 'text-amber-400 animate-spin'
+                  ? 'text-amber-500 animate-spin'
                   : 'text-slate-400'
               }
             />
-            <span className="truncate text-[10px]">
+            <span className="truncate text-[10px] font-medium text-slate-700">
               {firestoreStatus === 'connected'
                 ? 'Cloud Firestore Live'
                 : isGoogleConnected
@@ -234,19 +240,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <span
             className={`px-1.5 py-0.5 rounded text-[8px] font-bold shrink-0 ${
               firestoreStatus === 'connected' || isGoogleConnected || cloudSyncStatus === 'connected'
-                ? 'bg-emerald-500/20 text-emerald-300'
+                ? 'bg-emerald-100 text-emerald-800'
                 : isSyncing || cloudSyncStatus === 'syncing'
-                ? 'bg-amber-500/20 text-amber-300'
-                : 'bg-slate-700 text-slate-400'
+                ? 'bg-amber-100 text-amber-800'
+                : 'bg-slate-100 text-slate-600'
             }`}
           >
             {firestoreStatus === 'connected' ? 'Realtime' : isGoogleConnected ? 'Terkoneksi' : 'Offline'}
           </span>
         </button>
 
-        <div className="px-1 text-[9px] text-slate-500 flex items-center justify-between">
+        <div className="px-1 text-[9px] text-slate-400 flex items-center justify-between">
           <span className="truncate">Sistem ERP POS v1.3</span>
-          <span className="text-amber-400/80 font-semibold">UNPAM 77</span>
+          <span className="text-blue-600 font-semibold">UNPAM 77</span>
         </div>
       </div>
     </div>

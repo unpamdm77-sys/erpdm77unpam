@@ -209,7 +209,7 @@ export const PosTab: React.FC = () => {
               onClick={() => setShowShiftModal(true)}
               className="flex items-center space-x-1 px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition"
             >
-              <ShieldCheck size={14} className="text-amber-600" />
+              <ShieldCheck size={14} className="text-blue-600" />
               <span>Rekap Shift</span>
             </button>
 
@@ -233,7 +233,7 @@ export const PosTab: React.FC = () => {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 onKeyDown={handleSearchKeyDown}
-                className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
               />
             </div>
           </div>
@@ -247,7 +247,7 @@ export const PosTab: React.FC = () => {
               onClick={() => setSelectedCategory(cat)}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${
                 selectedCategory === cat
-                  ? 'bg-amber-500 text-slate-950 shadow-xs'
+                  ? 'bg-blue-600 text-white shadow-xs'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
               }`}
             >
@@ -268,21 +268,44 @@ export const PosTab: React.FC = () => {
               <div
                 key={item.id}
                 onClick={() => stockCheck.available && addToCart(item)}
-                className={`relative group p-3.5 rounded-2xl border transition flex flex-col justify-between text-left ${
+                className={`relative group p-3 rounded-2xl border transition flex flex-col justify-between text-left ${
                   stockCheck.available
-                    ? 'bg-white border-slate-200/90 hover:border-amber-400 hover:shadow-md cursor-pointer'
+                    ? 'bg-white border-slate-200 hover:border-blue-500 hover:shadow-md cursor-pointer'
                     : 'bg-slate-50 border-slate-200 opacity-60 cursor-not-allowed'
                 }`}
               >
                 <div>
-                  <div className="flex justify-between items-start gap-1">
-                    <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
-                      {item.category}
-                    </span>
-                    <span className="text-[10px] font-mono text-slate-400">{item.code}</span>
-                  </div>
+                  {/* Photo Thumbnail */}
+                  {item.image ? (
+                    <div className="relative w-full h-28 mb-2.5 overflow-hidden rounded-xl bg-slate-100 border border-slate-100">
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLElement).style.display = 'none';
+                        }}
+                      />
+                      <span className="absolute top-1.5 left-1.5 text-[9px] font-bold text-blue-900 bg-white/95 backdrop-blur-xs px-2 py-0.5 rounded-md shadow-xs border border-blue-100">
+                        {item.category}
+                      </span>
+                      <span className="absolute top-1.5 right-1.5 text-[9px] font-mono font-bold text-slate-700 bg-white/90 px-1.5 py-0.5 rounded shadow-xs">
+                        {item.code}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="relative w-full h-16 mb-2.5 overflow-hidden rounded-xl bg-gradient-to-br from-blue-50 to-slate-100 flex items-center justify-center border border-blue-100/60">
+                      <Utensils size={22} className="text-blue-400 stroke-[1.5]" />
+                      <span className="absolute top-1.5 left-1.5 text-[9px] font-bold text-blue-900 bg-white px-2 py-0.5 rounded-md shadow-xs border border-blue-100">
+                        {item.category}
+                      </span>
+                      <span className="absolute top-1.5 right-1.5 text-[9px] font-mono text-slate-400 bg-white/90 px-1.5 py-0.5 rounded">
+                        {item.code}
+                      </span>
+                    </div>
+                  )}
 
-                  <h4 className="font-extrabold text-sm text-slate-900 mt-2 group-hover:text-amber-600 transition leading-snug">
+                  <h4 className="font-extrabold text-sm text-slate-900 group-hover:text-blue-600 transition leading-snug">
                     {item.name}
                   </h4>
                   <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">
@@ -303,14 +326,14 @@ export const PosTab: React.FC = () => {
 
                   <div className="flex items-center gap-1">
                     {inCart && (
-                      <span className="w-6 h-6 rounded-lg bg-slate-900 text-amber-400 font-bold text-xs flex items-center justify-center">
+                      <span className="w-6 h-6 rounded-lg bg-blue-600 text-white font-bold text-xs flex items-center justify-center">
                         {inCart.qty}
                       </span>
                     )}
                     {stockCheck.available ? (
                       <button
                         type="button"
-                        className="w-8 h-8 rounded-xl bg-amber-500 group-hover:bg-amber-600 text-slate-950 flex items-center justify-center shadow-xs transition"
+                        className="w-8 h-8 rounded-xl bg-blue-600 group-hover:bg-blue-700 text-white flex items-center justify-center shadow-xs transition"
                       >
                         <Plus size={16} />
                       </button>
@@ -347,7 +370,7 @@ export const PosTab: React.FC = () => {
         {/* Cart Header with Parkir Order */}
         <div className="pb-3 border-b border-slate-100 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-bold">
+            <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold">
               <ShoppingCart size={16} />
             </div>
             <div>
@@ -362,14 +385,14 @@ export const PosTab: React.FC = () => {
               onClick={() => setShowParkedModal(true)}
               className={`flex items-center space-x-1 px-2.5 py-1.5 rounded-xl text-xs font-bold transition border ${
                 parkedOrders.length > 0
-                  ? 'bg-amber-50 border-amber-300 text-amber-800'
+                  ? 'bg-blue-50 border-blue-300 text-blue-800'
                   : 'bg-slate-50 border-slate-200 text-slate-600'
               }`}
             >
               <Clock size={13} />
               <span>Draft</span>
               {parkedOrders.length > 0 && (
-                <span className="w-4 h-4 rounded-full bg-amber-500 text-slate-950 text-[10px] flex items-center justify-center font-black">
+                <span className="w-4 h-4 rounded-full bg-blue-600 text-white text-[10px] flex items-center justify-center font-black">
                   {parkedOrders.length}
                 </span>
               )}
@@ -379,7 +402,7 @@ export const PosTab: React.FC = () => {
               <button
                 onClick={handleParkOrder}
                 title="Parkir Pesanan Ini (F8)"
-                className="px-2 py-1.5 text-xs font-bold text-amber-700 hover:bg-amber-50 rounded-xl transition"
+                className="px-2 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-50 rounded-xl transition"
               >
                 Parkir (F8)
               </button>
@@ -471,7 +494,7 @@ export const PosTab: React.FC = () => {
                 <div className="flex justify-between items-start">
                   <div className="pr-2">
                     <p className="font-bold text-xs text-slate-900 leading-snug">{item.menuItem.name}</p>
-                    <p className="text-[11px] font-black text-amber-600">
+                    <p className="text-[11px] font-black text-blue-600">
                       {formatRupiah(item.menuItem.price * item.qty)}
                     </p>
                   </div>
@@ -489,7 +512,7 @@ export const PosTab: React.FC = () => {
                     onClick={() =>
                       setActiveNotesId(activeNotesId === item.menuItem.id ? null : item.menuItem.id)
                     }
-                    className="text-[10px] text-amber-700 hover:text-amber-900 underline font-semibold"
+                    className="text-[10px] text-blue-700 hover:text-blue-900 underline font-semibold"
                   >
                     {item.notes ? `Catatan: ${item.notes}` : '+ Pedas & Topping'}
                   </button>
@@ -513,7 +536,7 @@ export const PosTab: React.FC = () => {
 
                 {/* Expandable Quick Modifiers Drawer */}
                 {activeNotesId === item.menuItem.id && (
-                  <div className="p-2.5 bg-white rounded-xl border border-amber-200 space-y-2 animate-in fade-in duration-150">
+                  <div className="p-2.5 bg-white rounded-xl border border-blue-200 space-y-2 animate-in fade-in duration-150">
                     {/* Level Pedas */}
                     <div>
                       <span className="text-[9px] font-bold text-slate-500 uppercase block mb-1">
@@ -528,7 +551,7 @@ export const PosTab: React.FC = () => {
                               const note = item.notes ? `${item.notes}, ${opt}` : opt;
                               updateCartNotes(item.menuItem.id, note);
                             }}
-                            className="px-2 py-0.5 text-[9px] font-bold rounded bg-slate-100 hover:bg-amber-100 text-slate-700"
+                            className="px-2 py-0.5 text-[9px] font-bold rounded bg-slate-100 hover:bg-blue-100 text-slate-700"
                           >
                             {opt}
                           </button>
@@ -550,7 +573,7 @@ export const PosTab: React.FC = () => {
                               const note = item.notes ? `${item.notes}, ${opt}` : opt;
                               updateCartNotes(item.menuItem.id, note);
                             }}
-                            className="px-2 py-0.5 text-[9px] font-bold rounded bg-slate-100 hover:bg-amber-100 text-slate-700"
+                            className="px-2 py-0.5 text-[9px] font-bold rounded bg-slate-100 hover:bg-blue-100 text-slate-700"
                           >
                             {opt}
                           </button>
@@ -569,7 +592,7 @@ export const PosTab: React.FC = () => {
                             key={top.name}
                             type="button"
                             onClick={() => addQuickToppingToCartItem(item.menuItem.id, top.name, top.price)}
-                            className="px-2 py-0.5 text-[9px] font-bold rounded bg-amber-50 border border-amber-200 text-amber-900 hover:bg-amber-100"
+                            className="px-2 py-0.5 text-[9px] font-bold rounded bg-blue-50 border border-blue-200 text-blue-900 hover:bg-blue-100"
                           >
                             +{top.name} ({formatRupiah(top.price)})
                           </button>
@@ -620,7 +643,7 @@ export const PosTab: React.FC = () => {
               <button
                 onClick={() => setDiscount(5000)}
                 className={`flex-1 py-1 text-[10px] font-bold rounded-lg border ${
-                  discount === 5000 ? 'bg-amber-500 text-slate-950 border-amber-500' : 'bg-slate-50 border-slate-200 text-slate-600'
+                  discount === 5000 ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 border-slate-200 text-slate-600'
                 }`}
               >
                 5rb
@@ -628,7 +651,7 @@ export const PosTab: React.FC = () => {
               <button
                 onClick={() => setDiscount(10000)}
                 className={`flex-1 py-1 text-[10px] font-bold rounded-lg border ${
-                  discount === 10000 ? 'bg-amber-500 text-slate-950 border-amber-500' : 'bg-slate-50 border-slate-200 text-slate-600'
+                  discount === 10000 ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 border-slate-200 text-slate-600'
                 }`}
               >
                 10rb
@@ -637,7 +660,7 @@ export const PosTab: React.FC = () => {
                 onClick={() => setDiscount(Math.round(cartSubtotal * 0.1))}
                 className={`flex-1 py-1 text-[10px] font-bold rounded-lg border ${
                   discount === Math.round(cartSubtotal * 0.1) && discount > 0
-                    ? 'bg-amber-500 text-slate-950 border-amber-500'
+                    ? 'bg-blue-600 text-white border-blue-600'
                     : 'bg-slate-50 border-slate-200 text-slate-600'
                 }`}
               >
@@ -660,7 +683,7 @@ export const PosTab: React.FC = () => {
             )}
             <div className="flex justify-between items-baseline pt-1 border-t border-slate-200">
               <span className="font-extrabold text-xs text-slate-900">TOTAL BAYAR</span>
-              <span className="font-black text-xl text-amber-600">{formatRupiah(cartTotal)}</span>
+              <span className="font-black text-xl text-blue-600">{formatRupiah(cartTotal)}</span>
             </div>
             <div className="flex justify-between text-[10px] text-slate-400">
               <span>Est. Laba Kotor:</span>
@@ -675,7 +698,7 @@ export const PosTab: React.FC = () => {
               disabled={cart.length === 0}
               className="py-3 px-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-2xl shadow-sm transition disabled:opacity-40 flex items-center justify-center space-x-1.5 text-xs"
             >
-              <Banknote size={16} className="text-amber-400" />
+              <Banknote size={16} className="text-blue-400" />
               <span>Tunai (F1)</span>
             </button>
 
@@ -687,7 +710,7 @@ export const PosTab: React.FC = () => {
                 }
               }}
               disabled={cart.length === 0}
-              className="py-3 px-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-2xl shadow-md transition disabled:opacity-40 flex items-center justify-center space-x-1.5 text-xs"
+              className="py-3 px-3 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl shadow-md transition disabled:opacity-40 flex items-center justify-center space-x-1.5 text-xs"
             >
               <QrCode size={16} />
               <span>QRIS (F2)</span>
@@ -715,9 +738,9 @@ export const PosTab: React.FC = () => {
 
             <div className="p-5 space-y-4">
               {/* Total Display */}
-              <div className="text-center p-3.5 bg-amber-50 rounded-2xl border border-amber-200">
+              <div className="text-center p-3.5 bg-blue-50 rounded-2xl border border-blue-200">
                 <p className="text-[10px] text-slate-600 uppercase font-bold tracking-wider">Total Tagihan Kasir</p>
-                <p className="text-3xl font-black text-slate-900 mt-0.5">{formatRupiah(cartTotal)}</p>
+                <p className="text-3xl font-black text-blue-900 mt-0.5">{formatRupiah(cartTotal)}</p>
               </div>
 
               {/* Method Tabs */}
@@ -735,7 +758,7 @@ export const PosTab: React.FC = () => {
                     }}
                     className={`py-2 px-1 rounded-xl text-xs font-bold border transition ${
                       selectedPayment === method
-                        ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-xs'
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
                         : 'bg-slate-50 border-slate-200 text-slate-700'
                     }`}
                   >
@@ -756,7 +779,7 @@ export const PosTab: React.FC = () => {
                       autoFocus
                       value={cashAmount}
                       onChange={e => setCashAmount(e.target.value === '' ? '' : Number(e.target.value))}
-                      className="w-full text-xl font-black px-4 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      className="w-full text-xl font-black px-4 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
 
@@ -765,7 +788,7 @@ export const PosTab: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setCashAmount(cartTotal)}
-                      className="py-1.5 px-1 bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-bold rounded-lg text-center"
+                      className="py-1.5 px-1 bg-blue-100 hover:bg-blue-200 text-blue-900 text-xs font-bold rounded-lg text-center"
                     >
                       Uang Pas
                     </button>
@@ -811,7 +834,7 @@ export const PosTab: React.FC = () => {
                   type="button"
                   onClick={() => handleExecutePayment()}
                   disabled={isProcessing}
-                  className="flex-1 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition shadow-md flex items-center justify-center space-x-1"
+                  className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-xs transition shadow-md flex items-center justify-center space-x-1"
                 >
                   <Check size={16} />
                   <span>{isProcessing ? 'Memproses...' : 'Selesaikan & Cetak'}</span>
@@ -828,7 +851,7 @@ export const PosTab: React.FC = () => {
           <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200">
             <div className="bg-slate-900 text-white p-4 flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Clock className="text-amber-400" size={18} />
+                <Clock className="text-blue-400" size={18} />
                 <h3 className="font-bold text-sm">Pesanan Tertunda / Parkir</h3>
               </div>
               <button onClick={() => setShowParkedModal(false)} className="text-slate-400 hover:text-white">✕</button>
@@ -857,7 +880,7 @@ export const PosTab: React.FC = () => {
                           recallParkedOrder(p.id);
                           setShowParkedModal(false);
                         }}
-                        className="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl"
+                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl"
                       >
                         Lanjutkan
                       </button>
