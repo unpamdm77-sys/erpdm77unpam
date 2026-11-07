@@ -94,7 +94,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       case 'OWNER':
         return <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-400 text-slate-950">OWNER</span>;
       case 'SUPERVISOR':
-        return <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-blue-400 text-slate-950">SPV</span>;
+        return <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-red-500 text-white">SPV</span>;
       case 'FINANCE':
         return <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-emerald-400 text-slate-950">FINANCE</span>;
       case 'STAFF':
@@ -106,18 +106,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <div className="h-full flex flex-col justify-between bg-white text-slate-800 select-none border-r border-slate-200">
       {/* Brand Header */}
       <div>
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+        <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-black shadow-md shadow-blue-500/20">
-              <Flame size={22} className="text-white" />
-            </div>
+            <img
+              src="/assets/aistudio/logo_dm77_d20d4c54.png"
+              alt="Dimsum Mentai 77 Logo"
+              className="w-11 h-11 object-contain drop-shadow-xs shrink-0 rounded-2xl bg-white p-0.5 border border-amber-200/60"
+            />
             <div>
-              <h1 className="font-black text-base tracking-wide text-blue-950 leading-tight">
-                DIMSUM MENTAI 77
-              </h1>
+              <div className="flex items-center space-x-1">
+                <h1 className="font-black text-sm sm:text-base tracking-wide text-slate-900 leading-tight">
+                  DIMSUM MENTAI 77
+                </h1>
+              </div>
               <div className="flex items-center space-x-1.5 mt-0.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <p className="text-[10px] text-blue-600 font-semibold">UNPAM Viktor & Pusat</p>
+                <p className="text-[10px] text-red-600 font-bold tracking-tight">UNPAM (Universitas Pamulang)</p>
               </div>
             </div>
           </div>
@@ -132,7 +136,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Navigation list */}
-        <nav className="p-3.5 space-y-1 overflow-y-auto max-h-[calc(100vh-16rem)]">
+        <nav className="p-3 space-y-1 overflow-y-auto max-h-[calc(100vh-16rem)]">
           {visibleNavItems.map(item => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -146,8 +150,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 }}
                 className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
                   isActive
-                    ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/20'
-                    : 'text-slate-600 hover:bg-blue-50 hover:text-blue-700'
+                    ? 'bg-red-600 text-white font-bold shadow-md shadow-red-600/20'
+                    : 'text-slate-600 hover:bg-red-50 hover:text-red-700'
                 }`}
               >
                 <div className="flex items-center space-x-3">
@@ -155,7 +159,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <span>{item.label}</span>
                 </div>
                 {item.id === 'pos' && !isActive && (
-                  <span className="w-2 h-2 rounded-full bg-blue-600 animate-ping"></span>
+                  <span className="w-2 h-2 rounded-full bg-red-600 animate-ping"></span>
                 )}
                 {item.ownerOnly && (
                   <span className={`text-[9px] px-1.5 py-0.5 rounded font-black border ${
@@ -173,15 +177,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Bottom Footer & User Profile */}
-      <div className="p-3.5 border-t border-slate-100 space-y-2 bg-slate-50/50">
+      <div className="p-3 border-t border-slate-100 space-y-2 bg-slate-50/60">
         {/* User Account Bar */}
         <div
           onClick={onOpenAccountSwitcher}
-          className="p-2.5 rounded-xl bg-blue-50/70 hover:bg-blue-100/70 border border-blue-200/70 cursor-pointer transition flex items-center justify-between group"
+          className="p-2.5 rounded-xl bg-white hover:bg-red-50/50 border border-slate-200 cursor-pointer transition flex items-center justify-between group shadow-2xs"
           title="Klik untuk Beralih Akun"
         >
           <div className="flex items-center space-x-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs">
+            <div className="w-8 h-8 rounded-full bg-red-600 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs">
               {currentUser.name.charAt(0)}
             </div>
             <div className="min-w-0">
@@ -189,10 +193,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <span className="text-xs font-bold text-slate-900 truncate">{currentUser.name}</span>
                 {getRoleBadge(currentUser.role)}
               </div>
-              <p className="text-[10px] text-blue-700 font-mono truncate">@{currentUser.username}</p>
+              <p className="text-[10px] text-slate-500 font-mono truncate">@{currentUser.username}</p>
             </div>
           </div>
-          <ChevronRight size={14} className="text-slate-400 group-hover:text-blue-600 transition shrink-0" />
+          <ChevronRight size={14} className="text-slate-400 group-hover:text-red-600 transition shrink-0" />
         </div>
 
         {/* Logout Button */}
@@ -214,7 +218,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Google Sheets / Firestore Status button */}
         <button
           onClick={onOpenGoogleSheetSettings}
-          className="w-full p-2.5 rounded-xl bg-white hover:bg-blue-50 text-slate-700 text-left text-[11px] flex items-center justify-between transition border border-slate-200 cursor-pointer shadow-2xs"
+          className="w-full p-2.5 rounded-xl bg-white hover:bg-red-50/50 text-slate-700 text-left text-[11px] flex items-center justify-between transition border border-slate-200 cursor-pointer shadow-2xs"
         >
           <div className="flex items-center space-x-2 min-w-0">
             <Cloud
@@ -252,7 +256,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         <div className="px-1 text-[9px] text-slate-400 flex items-center justify-between">
           <span className="truncate">Sistem ERP POS v1.3</span>
-          <span className="text-blue-600 font-semibold">UNPAM 77</span>
+          <span className="text-red-600 font-bold">UNPAM 77</span>
         </div>
       </div>
     </div>

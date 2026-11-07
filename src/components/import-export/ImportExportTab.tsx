@@ -280,7 +280,7 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="p-2 bg-blue-100 text-blue-700 rounded-xl">
+            <span className="p-2 bg-red-100 text-red-700 rounded-xl">
               <FileSpreadsheet size={20} />
             </span>
             <h2 className="text-xl font-black text-slate-900 tracking-tight">
@@ -294,7 +294,7 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
 
         <button
           onClick={handleExportFullExcel}
-          className="flex items-center space-x-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-sm transition text-xs"
+          className="flex items-center space-x-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-xs transition text-xs cursor-pointer"
         >
           <Download size={16} />
           <span>Download Seluruh Data Excel (.xlsx)</span>
@@ -315,13 +315,13 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
                 setParsedSheets(null);
                 setImportStatus(null);
               }}
-              className={`p-3 rounded-2xl border text-left transition flex items-center space-x-2.5 ${
+              className={`p-3 rounded-2xl border text-left transition flex items-center space-x-2.5 cursor-pointer ${
                 activeImportTab === 'materials'
-                  ? 'bg-blue-600 text-white border-blue-600 font-bold shadow-xs'
+                  ? 'bg-red-600 text-white border-red-600 font-bold shadow-xs'
                   : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
               }`}
             >
-              <Boxes size={18} className={activeImportTab === 'materials' ? 'text-white' : 'text-blue-600'} />
+              <Boxes size={18} className={activeImportTab === 'materials' ? 'text-white' : 'text-red-600'} />
               <div>
                 <p className="text-xs font-black leading-tight">Bahan Baku</p>
                 <p className="text-[10px] opacity-80 leading-tight">Stok & modal</p>
@@ -334,13 +334,13 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
                 setParsedSheets(null);
                 setImportStatus(null);
               }}
-              className={`p-3 rounded-2xl border text-left transition flex items-center space-x-2.5 ${
+              className={`p-3 rounded-2xl border text-left transition flex items-center space-x-2.5 cursor-pointer ${
                 activeImportTab === 'menu'
-                  ? 'bg-blue-600 text-white border-blue-600 font-bold shadow-xs'
+                  ? 'bg-red-600 text-white border-red-600 font-bold shadow-xs'
                   : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
               }`}
             >
-              <Utensils size={18} className={activeImportTab === 'menu' ? 'text-white' : 'text-blue-600'} />
+              <Utensils size={18} className={activeImportTab === 'menu' ? 'text-white' : 'text-red-600'} />
               <div>
                 <p className="text-xs font-black leading-tight">Menu Dimsum</p>
                 <p className="text-[10px] opacity-80 leading-tight">Harga & nama</p>
@@ -353,13 +353,13 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
                 setParsedSheets(null);
                 setImportStatus(null);
               }}
-              className={`p-3 rounded-2xl border text-left transition flex items-center space-x-2.5 ${
+              className={`p-3 rounded-2xl border text-left transition flex items-center space-x-2.5 cursor-pointer ${
                 activeImportTab === 'bom'
-                  ? 'bg-blue-600 text-white border-blue-600 font-bold shadow-xs'
+                  ? 'bg-red-600 text-white border-red-600 font-bold shadow-xs'
                   : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
               }`}
             >
-              <Calculator size={18} className={activeImportTab === 'bom' ? 'text-white' : 'text-blue-600'} />
+              <Calculator size={18} className={activeImportTab === 'bom' ? 'text-white' : 'text-red-600'} />
               <div>
                 <p className="text-xs font-black leading-tight">BOM Resep</p>
                 <p className="text-[10px] opacity-80 leading-tight">Takaran HPP</p>
@@ -372,13 +372,13 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
                 setParsedSheets(null);
                 setImportStatus(null);
               }}
-              className={`p-3 rounded-2xl border text-left transition flex items-center space-x-2.5 ${
+              className={`p-3 rounded-2xl border text-left transition flex items-center space-x-2.5 cursor-pointer ${
                 activeImportTab === 'purchasing'
-                  ? 'bg-blue-600 text-white border-blue-600 font-bold shadow-xs'
+                  ? 'bg-red-600 text-white border-red-600 font-bold shadow-xs'
                   : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
               }`}
             >
-              <Truck size={18} className={activeImportTab === 'purchasing' ? 'text-white' : 'text-blue-600'} />
+              <Truck size={18} className={activeImportTab === 'purchasing' ? 'text-white' : 'text-red-600'} />
               <div>
                 <p className="text-xs font-black leading-tight">Purchasing PO</p>
                 <p className="text-[10px] opacity-80 leading-tight">Restock bahan</p>
@@ -391,13 +391,13 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
                 setParsedSheets(null);
                 setImportStatus(null);
               }}
-              className={`p-3 rounded-2xl border text-left transition flex items-center space-x-2.5 ${
+              className={`p-3 rounded-2xl border text-left transition flex items-center space-x-2.5 cursor-pointer ${
                 activeImportTab === 'expenses'
-                  ? 'bg-blue-600 text-white border-blue-600 font-bold shadow-xs'
+                  ? 'bg-red-600 text-white border-red-600 font-bold shadow-xs'
                   : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
               }`}
             >
-              <Wallet size={18} className={activeImportTab === 'expenses' ? 'text-white' : 'text-blue-600'} />
+              <Wallet size={18} className={activeImportTab === 'expenses' ? 'text-white' : 'text-red-600'} />
               <div>
                 <p className="text-xs font-black leading-tight">Operasional</p>
                 <p className="text-[10px] opacity-80 leading-tight">Biaya & beban</p>
@@ -410,13 +410,13 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
                 setParsedSheets(null);
                 setImportStatus(null);
               }}
-              className={`p-3 rounded-2xl border text-left transition flex items-center space-x-2.5 ${
+              className={`p-3 rounded-2xl border text-left transition flex items-center space-x-2.5 cursor-pointer ${
                 activeImportTab === 'all'
-                  ? 'bg-blue-600 text-white border-blue-600 font-bold shadow-xs'
+                  ? 'bg-red-600 text-white border-red-600 font-bold shadow-xs'
                   : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
               }`}
             >
-              <Database size={18} className={activeImportTab === 'all' ? 'text-white' : 'text-blue-600'} />
+              <Database size={18} className={activeImportTab === 'all' ? 'text-white' : 'text-red-600'} />
               <div>
                 <p className="text-xs font-black leading-tight">Master 5-Sheet</p>
                 <p className="text-[10px] opacity-80 leading-tight">Lengkap semua</p>
@@ -426,10 +426,10 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
         </div>
 
         {/* Tab Guidelines & Download Template Buttons (Excel + PDF) */}
-        <div className="p-4 bg-blue-50/60 rounded-2xl border border-blue-200/80 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs">
+        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs">
           <div className="space-y-1">
-            <span className="font-extrabold text-blue-950 flex items-center gap-1.5">
-              <Info size={15} className="text-blue-600" />
+            <span className="font-extrabold text-slate-900 flex items-center gap-1.5">
+              <Info size={15} className="text-red-600" />
               <span>
                 {activeImportTab === 'materials' && 'Format Bahan Baku: Kode Bahan, Nama Bahan, Kategori, Stok Fisik, Satuan, Batas Minimum, Harga Beli'}
                 {activeImportTab === 'menu' && 'Format Menu: Kode Menu, Nama Menu, Kategori, Harga Jual, Deskripsi'}
@@ -449,14 +449,14 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
               <>
                 <button
                   onClick={downloadMaterialTemplate}
-                  className="flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 rounded-xl text-xs font-bold transition shadow-xs"
+                  className="flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
                 >
-                  <Download size={14} className="text-blue-600" />
+                  <Download size={14} className="text-red-600" />
                   <span>Template Excel (.xlsx)</span>
                 </button>
                 <button
                   onClick={() => generateMaterialPdfTemplate()}
-                  className="flex items-center space-x-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                  className="flex items-center space-x-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
                 >
                   <FileText size={14} />
                   <span>Cetak Form PDF</span>
@@ -468,14 +468,14 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
               <>
                 <button
                   onClick={downloadMenuTemplate}
-                  className="flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 rounded-xl text-xs font-bold transition shadow-xs"
+                  className="flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
                 >
-                  <Download size={14} className="text-blue-600" />
+                  <Download size={14} className="text-red-600" />
                   <span>Template Excel (.xlsx)</span>
                 </button>
                 <button
                   onClick={() => generateMenuPdfTemplate()}
-                  className="flex items-center space-x-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                  className="flex items-center space-x-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
                 >
                   <FileText size={14} />
                   <span>Cetak Form PDF</span>
@@ -487,14 +487,14 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
               <>
                 <button
                   onClick={downloadBOMTemplate}
-                  className="flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 rounded-xl text-xs font-bold transition shadow-xs"
+                  className="flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
                 >
-                  <Download size={14} className="text-blue-600" />
+                  <Download size={14} className="text-red-600" />
                   <span>Template Excel (.xlsx)</span>
                 </button>
                 <button
                   onClick={() => generateMenuPdfTemplate()}
-                  className="flex items-center space-x-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                  className="flex items-center space-x-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
                 >
                   <FileText size={14} />
                   <span>Cetak Form Resep BOM</span>
@@ -506,14 +506,14 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
               <>
                 <button
                   onClick={downloadPurchasingTemplate}
-                  className="flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 rounded-xl text-xs font-bold transition shadow-xs"
+                  className="flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
                 >
-                  <Download size={14} className="text-blue-600" />
+                  <Download size={14} className="text-red-600" />
                   <span>Template Excel (.xlsx)</span>
                 </button>
                 <button
                   onClick={() => generatePurchasingPdfTemplate()}
-                  className="flex items-center space-x-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                  className="flex items-center space-x-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
                 >
                   <FileText size={14} />
                   <span>Cetak Form PO PDF</span>
@@ -525,14 +525,14 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
               <>
                 <button
                   onClick={downloadExpenseTemplate}
-                  className="flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 rounded-xl text-xs font-bold transition shadow-xs"
+                  className="flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
                 >
-                  <Download size={14} className="text-blue-600" />
+                  <Download size={14} className="text-red-600" />
                   <span>Template Excel (.xlsx)</span>
                 </button>
                 <button
                   onClick={() => generateExpensePdfTemplate()}
-                  className="flex items-center space-x-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                  className="flex items-center space-x-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
                 >
                   <FileText size={14} />
                   <span>Cetak Form Beban PDF</span>
@@ -544,7 +544,7 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
               <>
                 <button
                   onClick={downloadCompleteMasterTemplate}
-                  className="flex items-center space-x-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                  className="flex items-center space-x-1.5 px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
                 >
                   <Download size={14} />
                   <span>Unduh Master Template 5 Sheet (.xlsx)</span>
@@ -554,9 +554,9 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
                     generateMaterialPdfTemplate();
                     setTimeout(() => generateMenuPdfTemplate(), 400);
                   }}
-                  className="flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 rounded-xl text-xs font-bold transition shadow-xs"
+                  className="flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
                 >
-                  <Printer size={14} className="text-blue-600" />
+                  <Printer size={14} className="text-red-600" />
                   <span>Cetak Seluruh Form PDF</span>
                 </button>
               </>
@@ -565,8 +565,8 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
         </div>
 
         {/* Upload Dropzone */}
-        <div className="border-2 border-dashed border-blue-200 rounded-3xl p-6 text-center space-y-3 hover:border-blue-500 transition bg-blue-50/20">
-          <Upload size={32} className="mx-auto text-blue-600" />
+        <div className="border-2 border-dashed border-slate-300 rounded-3xl p-6 text-center space-y-3 hover:border-red-500 transition bg-slate-50/50">
+          <Upload size={32} className="mx-auto text-red-600" />
           <div>
             <p className="text-xs font-bold text-slate-800">
               Pilih file Excel (.xlsx / .xls), CSV, atau PDF untuk {activeImportTab.toUpperCase()}
@@ -580,7 +580,7 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
             type="file"
             accept=".xlsx,.xls,.csv,.pdf"
             onChange={handleFileChange}
-            className="block w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
+            className="block w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-red-600 file:text-white hover:file:bg-red-700 cursor-pointer"
           />
         </div>
 
@@ -641,7 +641,7 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
 
               <button
                 onClick={handleExecuteImport}
-                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-xs shadow-md transition"
+                className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-black rounded-xl text-xs shadow-xs transition cursor-pointer"
               >
                 Konfirmasi & Masukkan ke Sistem
               </button>
@@ -679,7 +679,7 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
         <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-3 flex flex-col justify-between">
           <div>
             <div className="flex items-center space-x-2 text-slate-900 font-extrabold text-sm pb-2 border-b border-slate-100">
-              <Cloud size={18} className="text-blue-600" />
+              <Cloud size={18} className="text-red-600" />
               <span>Google Apps Script Realtime Connector</span>
             </div>
             <p className="text-xs text-slate-500 mt-2 leading-relaxed">
@@ -689,9 +689,9 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
 
           <button
             onClick={onOpenGoogleSheetSettings}
-            className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2"
+            className="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 cursor-pointer shadow-xs"
           >
-            <Cloud size={14} className="text-blue-200" />
+            <Cloud size={14} className="text-red-100" />
             <span>Buka Pengaturan Google Sheets Webhook</span>
           </button>
         </div>
@@ -699,31 +699,21 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
         <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-3 flex flex-col justify-between">
           <div>
             <div className="flex items-center space-x-2 text-slate-900 font-extrabold text-sm pb-2 border-b border-slate-100">
-              <Database size={18} className="text-blue-600" />
-              <span>Cadangan Database & Reset Awal</span>
+              <Database size={18} className="text-red-600" />
+              <span>Cadangan Database (Backup File JSON)</span>
             </div>
             <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-              Unduh arsip lengkap format JSON atau kembalikan semua data ke setelan demo awal Dimsum Mentai 77.
+              Unduh arsip lengkap database toko dalam format JSON untuk keamanan arsip data transaksi dan bahan baku Anda.
             </p>
           </div>
 
-          <div className="flex gap-2">
+          <div>
             <button
               onClick={handleExportBackupJson}
-              className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold rounded-xl text-xs transition"
+              className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl text-xs transition flex items-center justify-center space-x-2 border border-slate-200"
             >
-              Backup JSON
-            </button>
-            <button
-              onClick={() => {
-                if (confirm('Reset seluruh data kembali ke setelan awal Dimsum 77 UNPAM?')) {
-                  resetAllData();
-                  alert('Data berhasil direset.');
-                }
-              }}
-              className="flex-1 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold rounded-xl text-xs border border-rose-200 transition"
-            >
-              Reset Demo
+              <Download size={14} className="text-slate-600" />
+              <span>Download Backup JSON Database</span>
             </button>
           </div>
         </div>

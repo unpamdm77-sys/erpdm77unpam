@@ -208,7 +208,7 @@ export const AccountSettingsTab: React.FC<AccountSettingsTabProps> = ({ onSwitch
       case 'OWNER':
         return <span className="px-2.5 py-1 bg-amber-100 text-amber-900 border border-amber-300 rounded-lg text-[10px] font-black">👑 OWNER</span>;
       case 'SUPERVISOR':
-        return <span className="px-2.5 py-1 bg-blue-100 text-blue-900 border border-blue-300 rounded-lg text-[10px] font-black">👔 SUPERVISI / KEPALA TOKO</span>;
+        return <span className="px-2.5 py-1 bg-red-100 text-red-900 border border-red-300 rounded-lg text-[10px] font-black">👔 SUPERVISI / KEPALA TOKO</span>;
       case 'FINANCE':
         return <span className="px-2.5 py-1 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-lg text-[10px] font-black">📊 FINANCE</span>;
       case 'STAFF':
@@ -219,12 +219,10 @@ export const AccountSettingsTab: React.FC<AccountSettingsTabProps> = ({ onSwitch
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="bg-gradient-to-r from-blue-750 via-blue-800 to-slate-900 text-white rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden bg-blue-900">
-        <div className="absolute right-0 top-0 bottom-0 w-80 bg-gradient-to-l from-blue-400/20 to-transparent pointer-events-none"></div>
-
+      <div className="bg-slate-900 text-white rounded-3xl p-6 md:p-8 border border-slate-800 shadow-md relative overflow-hidden">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
           <div className="flex items-center space-x-4">
-            <div className="w-14 h-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-black shadow-lg shadow-blue-500/30">
+            <div className="w-14 h-14 rounded-2xl bg-red-600 text-white flex items-center justify-center font-black shadow-md">
               <Shield size={28} />
             </div>
             <div>
@@ -232,11 +230,11 @@ export const AccountSettingsTab: React.FC<AccountSettingsTabProps> = ({ onSwitch
                 <h2 className="text-xl md:text-2xl font-black text-white">
                   Setting Akun & Kredensial Staf
                 </h2>
-                <span className="px-2.5 py-0.5 rounded-full bg-blue-500 text-white font-black text-[10px]">
+                <span className="px-2.5 py-0.5 rounded-full bg-red-600 text-white font-black text-[10px]">
                   KHUSUS OWNER
                 </span>
               </div>
-              <p className="text-xs text-blue-100/80 mt-1 max-w-xl">
+              <p className="text-xs text-slate-300 mt-1 max-w-xl">
                 Kelola nama pengguna (username), kata sandi (password), kontak, dan hak akses karyawan Dimsum Mentai 77 UNPAM.
               </p>
             </div>
@@ -244,7 +242,7 @@ export const AccountSettingsTab: React.FC<AccountSettingsTabProps> = ({ onSwitch
 
           <button
             onClick={handleOpenAdd}
-            className="flex items-center space-x-2 px-5 py-3 bg-white hover:bg-blue-50 text-blue-900 font-black text-xs rounded-2xl shadow-md transition self-start md:self-auto cursor-pointer"
+            className="flex items-center space-x-2 px-5 py-3 bg-red-600 hover:bg-red-700 text-white font-black text-xs rounded-2xl shadow-md transition self-start md:self-auto cursor-pointer"
           >
             <UserPlus size={16} />
             <span>Tambah Akun Baru</span>
@@ -275,8 +273,8 @@ export const AccountSettingsTab: React.FC<AccountSettingsTabProps> = ({ onSwitch
           <span className="text-[10px] text-slate-500">Pemilik & Full Akses</span>
         </div>
         <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-          <span className="text-[10px] uppercase font-bold text-blue-600">Kepala Toko / SPV</span>
-          <p className="text-2xl font-black text-blue-600 mt-1">
+          <span className="text-[10px] uppercase font-bold text-red-600">Kepala Toko / SPV</span>
+          <p className="text-2xl font-black text-red-600 mt-1">
             {users.filter(u => u.role === 'SUPERVISOR').length}
           </p>
           <span className="text-[10px] text-slate-500">Approval & Operasional</span>
@@ -291,7 +289,7 @@ export const AccountSettingsTab: React.FC<AccountSettingsTabProps> = ({ onSwitch
       </div>
 
       {/* Cloud Multi-Device Real-Time Sync Status & Manual Controls */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 rounded-3xl p-5 text-white border border-slate-800 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-slate-900 rounded-3xl p-5 text-white border border-slate-800 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-start sm:items-center space-x-3.5">
           <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0">
             <Cloud size={24} className={firestoreStatus === 'connected' ? 'text-emerald-400' : 'text-amber-400'} />
@@ -487,7 +485,7 @@ export const AccountSettingsTab: React.FC<AccountSettingsTabProps> = ({ onSwitch
             </p>
           </div>
           <div className="p-3.5 bg-white rounded-2xl border border-slate-200 space-y-1">
-            <span className="font-bold text-blue-700">👔 SUPERVISI / KEPALA TOKO</span>
+            <span className="font-bold text-red-700">👔 SUPERVISI / KEPALA TOKO</span>
             <p className="text-slate-600 leading-relaxed">
               Operasional POS, Purchasing, Stock Opname, Riwayat, Approval Void/Retur Kasir. Dilarang Setting Akun, Import & Laporan Keuangan.
             </p>
@@ -629,7 +627,7 @@ export const AccountSettingsTab: React.FC<AccountSettingsTabProps> = ({ onSwitch
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-xs shadow-xs transition"
+                  className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white font-black rounded-xl text-xs shadow-xs transition"
                 >
                   {editingUserId ? 'Simpan Perubahan' : 'Buat Akun'}
                 </button>

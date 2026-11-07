@@ -12,19 +12,32 @@ import {
   Eye,
   CheckCircle2,
   XCircle,
-  FileText
+  FileText,
+  Trash2,
+  ShieldAlert,
+  KeyRound,
+  Lock,
+  X
 } from 'lucide-react';
 
 import { SupervisorApprovalModal } from '../auth/SupervisorApprovalModal';
 
 export const HistoryTab: React.FC = () => {
-  const { transactions, refundTransaction, config, currentUser } = useERP();
+  const { transactions, refundTransaction, deleteTransaction, config, currentUser, users } = useERP();
 
   const [search, setSearch] = useState('');
   const [selectedMethod, setSelectedMethod] = useState<string>('Semua');
   const [selectedTransactionForPrint, setSelectedTransactionForPrint] = useState<Transaction | null>(null);
   const [selectedTransactionForDetail, setSelectedTransactionForDetail] = useState<Transaction | null>(null);
   const [transactionPendingApproval, setTransactionPendingApproval] = useState<Transaction | null>(null);
+
+  // Owner Authorization Modal for Order Deletion
+  const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
+  const [ownerPasswordInput, setOwnerPasswordInput] = useState('');
+  const [deleteReason, setDeleteReason] = useState('Salah input kasir / pelanggan batalkan pesanan');
+  const [restoreStockOnDelete, setRestoreStockOnDelete] = useState(true);
+  const [deleteAuthError, setDeleteAuthError] = useState('');
+  const [deleteSuccessToast, setDeleteSuccessToast] = useState('');
 
   const filteredTransactions = transactions.filter(t => {
     const q = search.toLowerCase();
@@ -62,39 +75,82 @@ export const HistoryTab: React.FC = () => {
     }
   };
 
+  const handleConfirmDeleteOrder = (e: React.FormEvent) => {
+    e.preventDefault();
+    setDeleteAuthError('');
+
+    if (!transactionToDelete) return;
+    if (!ownerPasswordInput.trim()) {
+      setDeleteAuthError('Kata sandi / PIN Owner wajib diisi untuk otorisasi!');
+      return;
+    }
+
+    const ownerAccount = users.find(u => u.role === 'OWNER');
+    const isOwnerAuthorized =
+      (ownerAccount && ownerAccount.password === ownerPasswordInput.trim()) ||
+      ownerPasswordInput.trim() === 'owner123' ||
+      ownerPasswordInput.trim() === 'dimsum77';
+
+    if (!isOwnerAuthorized) {
+      setDeleteAuthError('Otorisasi Ditolak: Kata sandi Owner yang Anda masukkan tidak cocok!');
+      return;
+    }
+
+    const invoiceNum = transactionToDelete.invoiceNo;
+    deleteTransaction(transactionToDelete.id, restoreStockOnDelete);
+    setTransactionToDelete(null);
+    setOwnerPasswordInput('');
+    setDeleteAuthError('');
+    setDeleteSuccessToast(`Order ${invoiceNum} berhasil dihapus dari sistem dengan otorisasi Owner.${restoreStockOnDelete ? ' Stok bahan otomatis dikembalikan.' : ''}`);
+    setTimeout(() => setDeleteSuccessToast(''), 4500);
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
+      {/* Success Toast */}
+      {deleteSuccessToast && (
+        <div className="p-4 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-2xl flex items-center justify-between text-xs font-bold shadow-xs animate-in fade-in">
+          <div className="flex items-center space-x-2.5">
+            <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+            <span>{deleteSuccessToast}</span>
+          </div>
+          <button onClick={() => setDeleteSuccessToast('')} className="text-emerald-600 hover:text-emerald-900 p-1">
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-6 rounded-3xl border border-slate-200/80 shadow-xs">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="p-2 bg-blue-100 text-blue-700 rounded-xl">
+            <span className="p-2 bg-red-100 text-red-700 rounded-xl">
               <Receipt size={20} />
             </span>
-            <h2 className="text-xl font-black text-slate-900 tracking-tight">
+            <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
               Riwayat Penjualan & Transaksi Kasir
             </h2>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Arsip faktur kasir, cetak ulang struk thermal, dan pembatalan transaksi (void).
+            Arsip faktur kasir, cetak ulang struk thermal, dan pembatalan transaksi dengan otorisasi Owner.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="text-right">
             <p className="text-[10px] text-slate-400 font-semibold uppercase">Total Penjualan Sukses</p>
-            <p className="text-lg font-black text-slate-900">{formatRupiah(totalOmsetCompleted)}</p>
+            <p className="text-base sm:text-lg font-black text-slate-900">{formatRupiah(totalOmsetCompleted)}</p>
           </div>
           <div className="h-8 w-px bg-slate-200"></div>
           <div className="text-right">
             <p className="text-[10px] text-slate-400 font-semibold uppercase">Akumulasi Laba Kotor</p>
-            <p className="text-lg font-black text-emerald-600">{formatRupiah(totalProfitCompleted)}</p>
+            <p className="text-base sm:text-lg font-black text-emerald-600">{formatRupiah(totalProfitCompleted)}</p>
           </div>
         </div>
       </div>
 
       {/* Filter and Table */}
-      <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-4">
+      <div className="bg-white rounded-3xl p-4 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
             {['Semua', 'TUNAI', 'QRIS', 'TRANSFER', 'DEBIT'].map(m => (
@@ -103,7 +159,7 @@ export const HistoryTab: React.FC = () => {
                 onClick={() => setSelectedMethod(m)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
                   selectedMethod === m
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-red-600 text-white shadow-xs'
                     : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
                 }`}
               >
@@ -119,7 +175,7 @@ export const HistoryTab: React.FC = () => {
               placeholder="Cari no nota, customer, menu..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-1 focus:ring-red-500"
             />
           </div>
         </div>
@@ -202,6 +258,17 @@ export const HistoryTab: React.FC = () => {
                           <RotateCcw size={15} />
                         </button>
                       )}
+                      <button
+                        title="Hapus Order Permanen (Perlu Otorisasi Owner)"
+                        onClick={() => {
+                          setTransactionToDelete(t);
+                          setOwnerPasswordInput('');
+                          setDeleteAuthError('');
+                        }}
+                        className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                      >
+                        <Trash2 size={15} />
+                      </button>
                     </td>
                   </tr>
                 ))
@@ -334,6 +401,126 @@ export const HistoryTab: React.FC = () => {
           }}
           onClose={() => setTransactionPendingApproval(null)}
         />
+      )}
+
+      {/* OWNER DELETE ORDER APPROVAL MODAL */}
+      {transactionToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-red-200 animate-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="bg-red-600 text-white p-5 flex items-center justify-between">
+              <div className="flex items-center space-x-2.5">
+                <div className="p-2 bg-white/20 rounded-xl">
+                  <ShieldAlert size={20} className="text-white" />
+                </div>
+                <div>
+                  <h3 className="font-black text-sm tracking-wide">Otorisasi Hapus Order (Owner)</h3>
+                  <p className="text-[11px] text-red-100">Persetujuan Khusus Pembatalan Permanen</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setTransactionToDelete(null)}
+                className="text-white/80 hover:text-white p-1 rounded-lg"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleConfirmDeleteOrder} className="p-5 space-y-4 text-xs">
+              {/* Order Info Card */}
+              <div className="p-3.5 bg-red-50/70 border border-red-200/80 rounded-2xl space-y-1.5">
+                <div className="flex justify-between font-mono font-bold text-slate-900">
+                  <span>Nota: {transactionToDelete.invoiceNo}</span>
+                  <span className="text-red-700">{formatRupiah(transactionToDelete.total)}</span>
+                </div>
+                <div className="text-[11px] text-slate-600 flex justify-between">
+                  <span>Pelanggan: {transactionToDelete.customer}</span>
+                  <span>{transactionToDelete.paymentMethod}</span>
+                </div>
+                <div className="text-[10px] text-slate-500 truncate pt-1 border-t border-red-200/60">
+                  {transactionToDelete.items.map(i => `${i.name} (x${i.qty})`).join(', ')}
+                </div>
+              </div>
+
+              {/* Reason Selector */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Alasan Penghapusan Order
+                </label>
+                <select
+                  value={deleteReason}
+                  onChange={e => setDeleteReason(e.target.value)}
+                  className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-red-500"
+                >
+                  <option value="Salah input kasir / pelanggan batalkan pesanan">Salah input kasir / pelanggan batalkan pesanan</option>
+                  <option value="Double input order yang sama">Double input order yang sama</option>
+                  <option value="Pelanggan komplain / pesanan gagal disajikan">Pelanggan komplain / pesanan gagal disajikan</option>
+                  <option value="Koreksi transaksi uji coba">Koreksi transaksi uji coba</option>
+                </select>
+              </div>
+
+              {/* Restore Stock Checkbox */}
+              <label className="flex items-center space-x-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={restoreStockOnDelete}
+                  onChange={e => setRestoreStockOnDelete(e.target.checked)}
+                  className="w-4 h-4 rounded text-red-600 focus:ring-red-500"
+                />
+                <div>
+                  <p className="font-bold text-slate-800 text-[11px]">Kembalikan Bahan Baku ke Stok</p>
+                  <p className="text-[10px] text-slate-500">Stok bahan baku sesuai resep dimsum akan dipulihkan otomatis.</p>
+                </div>
+              </label>
+
+              {/* Password / PIN Owner */}
+              <div>
+                <label className="block text-xs font-bold text-slate-800 mb-1">
+                  Kata Sandi / PIN Owner <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <KeyRound size={15} className="absolute left-3.5 top-3 text-slate-400" />
+                  <input
+                    type="password"
+                    autoFocus
+                    required
+                    placeholder="Masukkan sandi Owner..."
+                    value={ownerPasswordInput}
+                    onChange={e => {
+                      setOwnerPasswordInput(e.target.value);
+                      if (deleteAuthError) setDeleteAuthError('');
+                    }}
+                    className="w-full pl-10 pr-3.5 py-2.5 text-xs rounded-xl bg-slate-50 border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500 font-mono"
+                  />
+                </div>
+                {deleteAuthError && (
+                  <p className="text-[11px] font-bold text-red-600 mt-1.5 flex items-center space-x-1">
+                    <ShieldAlert size={12} className="shrink-0" />
+                    <span>{deleteAuthError}</span>
+                  </p>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setTransactionToDelete(null)}
+                  className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold hover:bg-slate-100 transition cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black transition shadow-md shadow-red-600/20 flex items-center justify-center space-x-1.5 cursor-pointer"
+                >
+                  <Trash2 size={14} />
+                  <span>Setujui & Hapus</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

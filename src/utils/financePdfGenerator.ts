@@ -23,20 +23,20 @@ export const generateExecutiveFinancePdf = (data: FinancePdfData) => {
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
 
-  // 1. TOP HEADER BRAND BANNER (Modern Ocean Blue)
-  doc.setFillColor(37, 99, 235); // Blue-600
+  // 1. TOP HEADER BRAND BANNER (Dimsum 77 Brand Red)
+  doc.setFillColor(220, 38, 38); // Red-600
   doc.rect(14, 12, 182, 24, 'F');
 
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.text('DIMSUM MENTAI 77 — OUTLET UNPAM VIKTOR', 20, 22);
+  doc.text('DIMSUM MENTAI 77 — OUTLET UNPAM (UNIVERSITAS PAMULANG)', 20, 22);
 
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.text('Laporan Keuangan Eksekutif & Laba Rugi (Profit & Loss Statement)', 20, 28);
   doc.setFontSize(8);
-  doc.text('Jl. Surya Kencana No. 77, Pamulang, Tangerang Selatan • Telp/WA: 0812-7777-8899', 20, 33);
+  doc.text('Jl. Pamulang Permai 1 No.Samping, Gapura, Kec. Pamulang, Tangsel • WA: 0819-9645-1323', 20, 33);
 
   // 2. DOCUMENT TITLE & PERIODE INFO BOX
   doc.setTextColor(15, 23, 42); // Slate-900
@@ -355,7 +355,7 @@ export const generateExecutiveFinancePdf = (data: FinancePdfData) => {
   // Page footer note
   doc.setFontSize(6.5);
   doc.setTextColor(148, 163, 184);
-  doc.text('Dokumen ini digenerate secara otomatis oleh Sistem ERP Dimsum Mentai 77 UNPAM Viktor. Sah tanpa materai.', 14, pageHeight - 6);
+  doc.text('Dokumen ini digenerate secara otomatis oleh Sistem ERP Dimsum Mentai 77 UNPAM (Universitas Pamulang). Sah tanpa materai.', 14, pageHeight - 6);
 
   // Save PDF
   const sanitizedPeriod = data.periodLabel.replace(/\s+/g, '_').toUpperCase();

@@ -670,7 +670,7 @@ function setMaterialExactStock(ss, materialId, actualStock) {
                 </div>
               </div>
               <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700/60 flex items-center space-x-2.5">
-                <Laptop size={20} className="text-blue-400 shrink-0" />
+                <Laptop size={20} className="text-red-400 shrink-0" />
                 <div>
                   <p className="font-bold text-white text-[11px]">Laptop Owner</p>
                   <p className="text-[10px] text-slate-400">Pantau omzet & edit resep dari mana saja</p>
@@ -760,7 +760,7 @@ function setMaterialExactStock(ss, materialId, actualStock) {
                 <button
                   onClick={handleSyncPending}
                   disabled={syncingAll}
-                  className="flex items-center space-x-1.5 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-500 transition disabled:opacity-50 cursor-pointer"
+                  className="flex items-center space-x-1.5 px-4 py-2.5 bg-red-600 text-white rounded-xl text-xs font-bold hover:bg-red-700 transition disabled:opacity-50 cursor-pointer"
                 >
                   {syncingAll ? <RefreshCw size={14} className="animate-spin" /> : <Cloud size={14} />}
                   <span>Kirim {pendingCount} Transaksi Tertunda</span>

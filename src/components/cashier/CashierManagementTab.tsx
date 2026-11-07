@@ -112,15 +112,16 @@ export const CashierManagementTab: React.FC<CashierManagementTabProps> = ({ onSw
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     
     // Header
-    doc.setFillColor(37, 99, 235);
+    doc.setFillColor(220, 38, 38);
     doc.rect(14, 12, 182, 22, 'F');
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(13);
+    doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text('DIMSUM MENTAI 77 — OUTLET UNPAM VIKTOR', 20, 21);
-    doc.setFontSize(8.5);
+    doc.text('DIMSUM MENTAI 77 — OUTLET UNPAM (UNIVERSITAS PAMULANG)', 20, 20);
+    doc.setFontSize(7.5);
     doc.setFont('helvetica', 'normal');
-    doc.text('Laporan Rekapitulasi Kasir & Pemisahan Metode Pembayaran', 20, 27);
+    doc.text('Jl. Pamulang Permai 1 No.Samping, Gapura, Kec. Pamulang, Tangsel • WA: 0819-9645-1323', 20, 25);
+    doc.text('Laporan Rekapitulasi Kasir & Pemisahan Metode Pembayaran', 20, 30);
 
     // Title
     doc.setTextColor(15, 23, 42);
@@ -146,12 +147,12 @@ export const CashierManagementTab: React.FC<CashierManagementTabProps> = ({ onSw
     doc.text('1. Ringkasan Total Penjualan', 14, curY);
 
     curY += 4;
-    doc.setFillColor(239, 246, 255);
+    doc.setFillColor(254, 242, 242);
     doc.roundedRect(14, curY, 88, 18, 2, 2, 'F');
     doc.setTextColor(100, 116, 139);
     doc.setFontSize(7);
     doc.text('TOTAL PENJUALAN KASIR', 18, curY + 6);
-    doc.setTextColor(37, 99, 235);
+    doc.setTextColor(220, 38, 38);
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.text(formatRupiah(totalSales), 18, curY + 13);
@@ -184,9 +185,9 @@ export const CashierManagementTab: React.FC<CashierManagementTabProps> = ({ onSw
     curY += 6.5;
     const methodsData = [
       { name: 'TUNAI (Uang Fisik Laci)', count: cashStats.count, pct: `${cashStats.percentage}%`, amount: formatRupiah(cashStats.amount), color: [16, 185, 129] },
-      { name: 'QRIS (Dinamis / Statis)', count: qrisStats.count, pct: `${qrisStats.percentage}%`, amount: formatRupiah(qrisStats.amount), color: [37, 99, 235] },
-      { name: 'TRANSFER BANK', count: transferStats.count, pct: `${transferStats.percentage}%`, amount: formatRupiah(transferStats.amount), color: [14, 165, 233] },
-      { name: 'KARTU DEBIT / EDC', count: debitStats.count, pct: `${debitStats.percentage}%`, amount: formatRupiah(debitStats.amount), color: [99, 102, 241] },
+      { name: 'QRIS (Dinamis / Statis)', count: qrisStats.count, pct: `${qrisStats.percentage}%`, amount: formatRupiah(qrisStats.amount), color: [220, 38, 38] },
+      { name: 'TRANSFER BANK', count: transferStats.count, pct: `${transferStats.percentage}%`, amount: formatRupiah(transferStats.amount), color: [217, 119, 6] },
+      { name: 'KARTU DEBIT / EDC', count: debitStats.count, pct: `${debitStats.percentage}%`, amount: formatRupiah(debitStats.amount), color: [71, 85, 105] },
     ];
 
     methodsData.forEach((m, idx) => {
@@ -256,7 +257,7 @@ export const CashierManagementTab: React.FC<CashierManagementTabProps> = ({ onSw
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4 bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="p-1.5 sm:p-2 bg-blue-100 text-blue-700 rounded-xl">
+            <span className="p-1.5 sm:p-2 bg-red-100 text-red-700 rounded-xl">
               <Receipt size={18} />
             </span>
             <h2 className="text-base sm:text-xl font-black text-slate-900 tracking-tight">
@@ -273,25 +274,25 @@ export const CashierManagementTab: React.FC<CashierManagementTabProps> = ({ onSw
           <div className="flex bg-slate-100 p-0.5 sm:p-1 rounded-xl text-[11px] sm:text-xs font-bold text-slate-600">
             <button
               onClick={() => setDateFilter('today')}
-              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg transition ${dateFilter === 'today' ? 'bg-blue-600 text-white shadow-xs' : 'hover:text-slate-900'}`}
+              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg transition cursor-pointer ${dateFilter === 'today' ? 'bg-red-600 text-white shadow-xs' : 'hover:text-slate-900'}`}
             >
               Hari Ini
             </button>
             <button
               onClick={() => setDateFilter('7days')}
-              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg transition ${dateFilter === '7days' ? 'bg-blue-600 text-white shadow-xs' : 'hover:text-slate-900'}`}
+              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg transition cursor-pointer ${dateFilter === '7days' ? 'bg-red-600 text-white shadow-xs' : 'hover:text-slate-900'}`}
             >
               7 Hari
             </button>
             <button
               onClick={() => setDateFilter('month')}
-              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg transition ${dateFilter === 'month' ? 'bg-blue-600 text-white shadow-xs' : 'hover:text-slate-900'}`}
+              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg transition cursor-pointer ${dateFilter === 'month' ? 'bg-red-600 text-white shadow-xs' : 'hover:text-slate-900'}`}
             >
               Bulan Ini
             </button>
             <button
               onClick={() => setDateFilter('all')}
-              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg transition ${dateFilter === 'all' ? 'bg-blue-600 text-white shadow-xs' : 'hover:text-slate-900'}`}
+              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg transition cursor-pointer ${dateFilter === 'all' ? 'bg-red-600 text-white shadow-xs' : 'hover:text-slate-900'}`}
             >
               Semua
             </button>
@@ -314,7 +315,7 @@ export const CashierManagementTab: React.FC<CashierManagementTabProps> = ({ onSw
           {/* Print Shift Report */}
           <button
             onClick={handlePrintShiftReport}
-            className="flex items-center space-x-1.5 px-3 py-1.5 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-xs transition cursor-pointer"
+            className="flex items-center space-x-1.5 px-3 py-1.5 sm:py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs shadow-xs transition cursor-pointer"
             title="Cetak Laporan Rekapitulasi Kasir PDF"
           >
             <Printer size={14} />
@@ -331,7 +332,7 @@ export const CashierManagementTab: React.FC<CashierManagementTabProps> = ({ onSw
             <span className="text-[10px] sm:text-xs text-slate-500 font-bold uppercase tracking-wider">
               Total Penjualan
             </span>
-            <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+            <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
               <Receipt size={16} />
             </div>
           </div>
@@ -367,7 +368,7 @@ export const CashierManagementTab: React.FC<CashierManagementTabProps> = ({ onSw
             <span className="text-[10px] sm:text-xs text-slate-500 font-bold uppercase tracking-wider">
               Digital (Non-Tunai)
             </span>
-            <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center">
+            <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
               <QrCode size={16} />
             </div>
           </div>
@@ -454,34 +455,34 @@ export const CashierManagementTab: React.FC<CashierManagementTabProps> = ({ onSw
           </div>
 
           {/* 2. QRIS */}
-          <div className="p-4 rounded-2xl border border-blue-200 bg-blue-50/40 space-y-3 flex flex-col justify-between">
+          <div className="p-4 rounded-2xl border border-amber-300 bg-amber-50/50 space-y-3 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <span className="p-1.5 bg-blue-100 text-blue-800 rounded-lg">
+                  <span className="p-1.5 bg-amber-200 text-amber-900 rounded-lg">
                     <QrCode size={16} />
                   </span>
-                  <span className="font-black text-xs text-blue-950 uppercase">2. QRIS DINAMIS</span>
+                  <span className="font-black text-xs text-amber-950 uppercase">2. QRIS DINAMIS</span>
                 </div>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-200 text-blue-900">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-200 text-amber-900">
                   {qrisStats.percentage}%
                 </span>
               </div>
 
               <div className="mt-3">
-                <span className="text-xs text-slate-500">Total Omset QRIS:</span>
-                <p className="text-xl font-black text-blue-700">{formatRupiah(qrisStats.amount)}</p>
+                <span className="text-xs text-slate-600">Total Omset QRIS:</span>
+                <p className="text-xl font-black text-amber-700">{formatRupiah(qrisStats.amount)}</p>
               </div>
             </div>
 
-            <div className="pt-2 border-t border-blue-200/60 text-[11px] text-slate-600 space-y-1">
+            <div className="pt-2 border-t border-amber-200/80 text-[11px] text-slate-700 space-y-1">
               <div className="flex justify-between">
                 <span>Jumlah Transaksi:</span>
                 <span className="font-bold text-slate-900">{qrisStats.count} nota</span>
               </div>
               <div className="flex justify-between">
                 <span>Status Dana:</span>
-                <span className="font-bold text-blue-800">Bank Settlement</span>
+                <span className="font-bold text-amber-800">Bank Settlement</span>
               </div>
               <div className="flex justify-between">
                 <span>Kanal Pembayaran:</span>
@@ -491,34 +492,34 @@ export const CashierManagementTab: React.FC<CashierManagementTabProps> = ({ onSw
           </div>
 
           {/* 3. TRANSFER BANK */}
-          <div className="p-4 rounded-2xl border border-sky-200 bg-sky-50/40 space-y-3 flex flex-col justify-between">
+          <div className="p-4 rounded-2xl border border-slate-300 bg-slate-50 space-y-3 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <span className="p-1.5 bg-sky-100 text-sky-800 rounded-lg">
+                  <span className="p-1.5 bg-slate-200 text-slate-800 rounded-lg">
                     <Building2 size={16} />
                   </span>
-                  <span className="font-black text-xs text-sky-950 uppercase">3. TRANSFER BANK</span>
+                  <span className="font-black text-xs text-slate-900 uppercase">3. TRANSFER BANK</span>
                 </div>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-sky-200 text-sky-900">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-slate-200 text-slate-800">
                   {transferStats.percentage}%
                 </span>
               </div>
 
               <div className="mt-3">
-                <span className="text-xs text-slate-500">Total Omset Transfer:</span>
-                <p className="text-xl font-black text-sky-700">{formatRupiah(transferStats.amount)}</p>
+                <span className="text-xs text-slate-600">Total Omset Transfer:</span>
+                <p className="text-xl font-black text-slate-900">{formatRupiah(transferStats.amount)}</p>
               </div>
             </div>
 
-            <div className="pt-2 border-t border-sky-200/60 text-[11px] text-slate-600 space-y-1">
+            <div className="pt-2 border-t border-slate-200 text-[11px] text-slate-700 space-y-1">
               <div className="flex justify-between">
                 <span>Jumlah Transaksi:</span>
                 <span className="font-bold text-slate-900">{transferStats.count} nota</span>
               </div>
               <div className="flex justify-between">
                 <span>Status Dana:</span>
-                <span className="font-bold text-sky-800">Rekening Usaha</span>
+                <span className="font-bold text-slate-800">Rekening Usaha</span>
               </div>
               <div className="flex justify-between">
                 <span>Rekening Tujuan:</span>
@@ -528,34 +529,34 @@ export const CashierManagementTab: React.FC<CashierManagementTabProps> = ({ onSw
           </div>
 
           {/* 4. KARTU DEBIT */}
-          <div className="p-4 rounded-2xl border border-indigo-200 bg-indigo-50/40 space-y-3 flex flex-col justify-between">
+          <div className="p-4 rounded-2xl border border-red-200 bg-red-50/40 space-y-3 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <span className="p-1.5 bg-indigo-100 text-indigo-800 rounded-lg">
+                  <span className="p-1.5 bg-red-100 text-red-800 rounded-lg">
                     <CreditCard size={16} />
                   </span>
-                  <span className="font-black text-xs text-indigo-950 uppercase">4. KARTU DEBIT</span>
+                  <span className="font-black text-xs text-red-950 uppercase">4. KARTU DEBIT</span>
                 </div>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-200 text-indigo-900">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-red-200 text-red-900">
                   {debitStats.percentage}%
                 </span>
               </div>
 
               <div className="mt-3">
-                <span className="text-xs text-slate-500">Total Omset Debit:</span>
-                <p className="text-xl font-black text-indigo-700">{formatRupiah(debitStats.amount)}</p>
+                <span className="text-xs text-slate-600">Total Omset Debit:</span>
+                <p className="text-xl font-black text-red-700">{formatRupiah(debitStats.amount)}</p>
               </div>
             </div>
 
-            <div className="pt-2 border-t border-indigo-200/60 text-[11px] text-slate-600 space-y-1">
+            <div className="pt-2 border-t border-red-200/60 text-[11px] text-slate-700 space-y-1">
               <div className="flex justify-between">
                 <span>Jumlah Transaksi:</span>
                 <span className="font-bold text-slate-900">{debitStats.count} nota</span>
               </div>
               <div className="flex justify-between">
                 <span>Kliring:</span>
-                <span className="font-bold text-indigo-800">Mesin EDC Toko</span>
+                <span className="font-bold text-red-800">Mesin EDC Toko</span>
               </div>
               <div className="flex justify-between">
                 <span>Kartu:</span>
@@ -577,7 +578,7 @@ export const CashierManagementTab: React.FC<CashierManagementTabProps> = ({ onSw
                 onClick={() => setSelectedMethodFilter(m)}
                 className={`px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap ${
                   selectedMethodFilter === m
-                    ? 'bg-blue-600 text-white shadow-xs'
+                    ? 'bg-red-600 text-white shadow-xs'
                     : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
                 }`}
               >
@@ -593,7 +594,7 @@ export const CashierManagementTab: React.FC<CashierManagementTabProps> = ({ onSw
               placeholder="Cari nota atau kasir..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 sm:py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full pl-9 pr-3 py-1.5 sm:py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-1 focus:ring-red-500"
             />
           </div>
         </div>
@@ -629,10 +630,10 @@ export const CashierManagementTab: React.FC<CashierManagementTabProps> = ({ onSw
                         t.paymentMethod === 'TUNAI'
                           ? 'bg-emerald-100 text-emerald-800'
                           : t.paymentMethod === 'QRIS'
-                          ? 'bg-blue-100 text-blue-800'
+                          ? 'bg-amber-100 text-amber-800'
                           : t.paymentMethod === 'TRANSFER'
-                          ? 'bg-sky-100 text-sky-800'
-                          : 'bg-indigo-100 text-indigo-800'
+                          ? 'bg-slate-200 text-slate-800'
+                          : 'bg-red-100 text-red-800'
                       }`}>
                         {t.paymentMethod}
                       </span>

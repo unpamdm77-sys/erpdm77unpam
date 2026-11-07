@@ -263,7 +263,7 @@ export function downloadExpenseTemplate() {
       'Kategori': 'Gas LPG',
       'Tanggal': new Date().toISOString().slice(0, 10),
       'Nominal Biaya': 22000,
-      'Catatan Operasional': 'Toko Gas Berkah Viktor'
+      'Catatan Operasional': 'Toko Gas Berkah Pamulang'
     },
     {
       'Nama Pengeluaran': 'Es Batu Kristal 1 Karung',
@@ -326,7 +326,7 @@ export function downloadCompleteMasterTemplate() {
 
   // Sheet 5: Beban_Operasional
   const expSample = [
-    { 'Nama Pengeluaran': 'Gas LPG 3kg', 'Kategori': 'Gas LPG', 'Tanggal': new Date().toISOString().slice(0, 10), 'Nominal Biaya': 22000, 'Catatan Operasional': 'Warung Gas Viktor' }
+    { 'Nama Pengeluaran': 'Gas LPG 3kg', 'Kategori': 'Gas LPG', 'Tanggal': new Date().toISOString().slice(0, 10), 'Nominal Biaya': 22000, 'Catatan Operasional': 'Warung Gas Pamulang' }
   ];
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(expSample), 'Beban_Operasional');
 

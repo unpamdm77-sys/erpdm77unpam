@@ -154,7 +154,7 @@ export const FinanceTab: React.FC = () => {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4 bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="p-1.5 sm:p-2 bg-blue-100 text-blue-700 rounded-xl">
+            <span className="p-1.5 sm:p-2 bg-red-100 text-red-700 rounded-xl">
               <Wallet size={18} />
             </span>
             <h2 className="text-base sm:text-xl font-black text-slate-900 tracking-tight">
@@ -171,25 +171,25 @@ export const FinanceTab: React.FC = () => {
           <div className="flex bg-slate-100 p-0.5 sm:p-1 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs font-bold text-slate-600">
             <button
               onClick={() => setDateFilter('today')}
-              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl transition ${dateFilter === 'today' ? 'bg-blue-600 text-white shadow-xs' : 'hover:text-slate-900'}`}
+              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl transition cursor-pointer ${dateFilter === 'today' ? 'bg-red-600 text-white shadow-xs' : 'hover:text-slate-900'}`}
             >
               Hari Ini
             </button>
             <button
               onClick={() => setDateFilter('7days')}
-              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl transition ${dateFilter === '7days' ? 'bg-blue-600 text-white shadow-xs' : 'hover:text-slate-900'}`}
+              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl transition cursor-pointer ${dateFilter === '7days' ? 'bg-red-600 text-white shadow-xs' : 'hover:text-slate-900'}`}
             >
               7 Hari
             </button>
             <button
               onClick={() => setDateFilter('month')}
-              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl transition ${dateFilter === 'month' ? 'bg-blue-600 text-white shadow-xs' : 'hover:text-slate-900'}`}
+              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl transition cursor-pointer ${dateFilter === 'month' ? 'bg-red-600 text-white shadow-xs' : 'hover:text-slate-900'}`}
             >
               Bulan Ini
             </button>
             <button
               onClick={() => setDateFilter('all')}
-              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl transition ${dateFilter === 'all' ? 'bg-blue-600 text-white shadow-xs' : 'hover:text-slate-900'}`}
+              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl transition cursor-pointer ${dateFilter === 'all' ? 'bg-red-600 text-white shadow-xs' : 'hover:text-slate-900'}`}
             >
               Semua
             </button>
@@ -198,7 +198,7 @@ export const FinanceTab: React.FC = () => {
           {/* Export PDF Button */}
           <button
             onClick={handleExportPdf}
-            className="flex items-center space-x-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs transition text-xs"
+            className="flex items-center space-x-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs transition text-xs cursor-pointer"
             title="Ekspor Laporan Keuangan Eksekutif Resmi ke PDF"
           >
             <FileDown size={14} />
@@ -207,7 +207,7 @@ export const FinanceTab: React.FC = () => {
 
           <button
             onClick={handleOpenAddExpense}
-            className="flex items-center space-x-1.5 px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-xs transition text-xs"
+            className="flex items-center space-x-1.5 px-3 sm:px-4 py-1.5 sm:py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-xs transition text-xs cursor-pointer"
           >
             <Plus size={14} />
             <span>+ Catat Beban</span>
@@ -225,7 +225,7 @@ export const FinanceTab: React.FC = () => {
 
         <div className="bg-white p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-xs">
           <p className="text-[10px] sm:text-xs text-slate-500 font-bold uppercase">HPP (BOM Bahan)</p>
-          <h3 className="text-base sm:text-2xl font-black text-blue-700 mt-1">{formatRupiah(totalHpp)}</h3>
+          <h3 className="text-base sm:text-2xl font-black text-slate-900 mt-1">{formatRupiah(totalHpp)}</h3>
           <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5">Biaya bahan riil</p>
         </div>
 
@@ -237,10 +237,10 @@ export const FinanceTab: React.FC = () => {
 
         <div className="bg-white p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-xs">
           <p className="text-[10px] sm:text-xs text-slate-500 font-bold uppercase">Laba Bersih (Net)</p>
-          <h3 className={`text-base sm:text-2xl font-black mt-1 ${netProfit >= 0 ? 'text-blue-600' : 'text-rose-600'}`}>
+          <h3 className={`text-base sm:text-2xl font-black mt-1 ${netProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
             {formatRupiah(netProfit)}
           </h3>
-          <p className="text-[10px] sm:text-[11px] text-blue-600 font-semibold mt-0.5">Net Margin: {netMarginPercent}%</p>
+          <p className={`text-[10px] sm:text-[11px] font-semibold mt-0.5 ${netProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>Net Margin: {netMarginPercent}%</p>
         </div>
       </div>
 
@@ -253,7 +253,7 @@ export const FinanceTab: React.FC = () => {
               <h3 className="font-extrabold text-slate-900 text-base">Laporan Laba Rugi (P&L)</h3>
               <p className="text-xs text-slate-400">Ringkasan kinerja keuangan outlet Dimsum 77</p>
             </div>
-            <span className="text-xs font-bold px-2.5 py-1 bg-blue-50 text-blue-800 rounded-lg">
+            <span className="text-xs font-bold px-2.5 py-1 bg-slate-100 text-slate-800 rounded-lg">
               Periode: {dateFilter.toUpperCase()}
             </span>
           </div>
@@ -261,7 +261,7 @@ export const FinanceTab: React.FC = () => {
           <div className="space-y-3 text-xs divide-y divide-slate-100">
             {/* Revenue */}
             <div className="pt-2 space-y-1.5">
-              <p className="font-bold text-slate-900 uppercase text-[11px] text-blue-700">
+              <p className="font-bold text-slate-900 uppercase text-[11px]">
                 1. Pendapatan Usaha
               </p>
               <div className="flex justify-between text-slate-600">
@@ -280,12 +280,12 @@ export const FinanceTab: React.FC = () => {
 
             {/* HPP */}
             <div className="pt-3 space-y-1.5">
-              <p className="font-bold text-slate-900 uppercase text-[11px] text-blue-700">
+              <p className="font-bold text-slate-900 uppercase text-[11px]">
                 2. Harga Pokok Penjualan (HPP)
               </p>
               <div className="flex justify-between text-slate-600">
                 <span>Biaya Bahan Baku Terpakai (BOM Resep Dimsum)</span>
-                <span className="text-blue-900">-{formatRupiah(totalHpp)}</span>
+                <span className="text-slate-900">-{formatRupiah(totalHpp)}</span>
               </div>
               <div className="flex justify-between font-extrabold text-emerald-700 bg-emerald-50/60 p-2 rounded-xl">
                 <span>LABA KOTOR (GROSS PROFIT)</span>
@@ -295,7 +295,7 @@ export const FinanceTab: React.FC = () => {
 
             {/* Operating Expenses */}
             <div className="pt-3 space-y-1.5">
-              <p className="font-bold text-slate-900 uppercase text-[11px] text-blue-700">
+              <p className="font-bold text-slate-900 uppercase text-[11px]">
                 3. Beban Operasional Non-Stok
               </p>
               {filteredExpenses.length === 0 ? (
@@ -314,18 +314,18 @@ export const FinanceTab: React.FC = () => {
               </div>
             </div>
 
-            {/* Net Profit */}
+            {/* Net Profit - Solid High Contrast Block */}
             <div className="pt-4">
-              <div className="flex justify-between items-center p-3.5 bg-gradient-to-r from-slate-900 to-blue-950 text-white rounded-2xl shadow-sm">
+              <div className="flex justify-between items-center p-4 bg-slate-900 text-white rounded-2xl shadow-xs border border-slate-800">
                 <div>
-                  <p className="text-[10px] uppercase font-bold text-blue-300 tracking-wider">
+                  <p className="text-[10px] uppercase font-bold text-amber-400 tracking-wider">
                     Laba Bersih Akhir (Net Profit)
                   </p>
                   <p className="text-xs text-slate-300">Setelah seluruh HPP & Biaya Operasional</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xl font-black text-blue-300">{formatRupiah(netProfit)}</p>
-                  <p className="text-[11px] font-semibold text-emerald-400">Margin: {netMarginPercent}%</p>
+                  <p className="text-xl font-black text-emerald-400">{formatRupiah(netProfit)}</p>
+                  <p className="text-[11px] font-semibold text-slate-300">Margin: {netMarginPercent}%</p>
                 </div>
               </div>
             </div>
@@ -342,7 +342,7 @@ export const FinanceTab: React.FC = () => {
               </div>
               <button
                 onClick={handleOpenAddExpense}
-                className="text-xs font-bold text-blue-700 hover:text-blue-800 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200 transition"
+                className="text-xs font-bold text-red-700 hover:text-red-800 bg-red-50 px-2.5 py-1 rounded-lg border border-red-200 transition cursor-pointer"
               >
                 + Tambah Beban
               </button>
@@ -357,14 +357,14 @@ export const FinanceTab: React.FC = () => {
                   placeholder="Cari beban (contoh: gas, listrik, sewa)..."
                   value={expenseSearch}
                   onChange={e => setExpenseSearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-1 focus:ring-red-500"
                 />
               </div>
 
               <select
                 value={selectedExpenseCategory}
                 onChange={e => setSelectedExpenseCategory(e.target.value)}
-                className="text-xs px-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 font-medium text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="text-xs px-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 font-medium text-slate-700 focus:outline-none focus:ring-1 focus:ring-red-500"
               >
                 <option value="Semua">Semua Kategori</option>
                 <option value="Gas LPG">Gas LPG</option>
@@ -427,7 +427,7 @@ export const FinanceTab: React.FC = () => {
                         </span>
                         <button
                           onClick={() => handleOpenEditExpense(exp)}
-                          className="text-slate-400 hover:text-blue-600 p-1 transition"
+                          className="text-slate-400 hover:text-red-600 p-1 transition"
                           title="Adjust / Edit Beban Operasional"
                         >
                           <Edit2 size={14} />
@@ -465,12 +465,12 @@ export const FinanceTab: React.FC = () => {
           <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
             <div className="bg-slate-900 text-white p-5 flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Wallet className="text-blue-400" size={20} />
+                <Wallet className="text-amber-400" size={20} />
                 <h3 className="font-bold text-base">
                   {editingExpense ? `Adjust / Edit Beban Operasional (${editingExpense.expenseNo})` : 'Catat Beban Pengeluaran Non-Stok'}
                 </h3>
               </div>
-              <button onClick={() => setShowAddExpenseModal(false)} className="text-slate-400 hover:text-white">✕</button>
+              <button onClick={() => setShowAddExpenseModal(false)} className="text-slate-400 hover:text-white cursor-pointer">✕</button>
             </div>
 
             <form onSubmit={handleSaveExpense} className="p-6 space-y-4 text-xs">
@@ -484,7 +484,7 @@ export const FinanceTab: React.FC = () => {
                   value={expenseName}
                   onChange={e => setExpenseName(e.target.value)}
                   placeholder="Contoh: Gas LPG 3kg untuk Kukusan"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500 font-semibold"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-1 focus:ring-red-500 font-semibold"
                 />
               </div>
 
@@ -529,7 +529,7 @@ export const FinanceTab: React.FC = () => {
                   value={expenseAmount}
                   onChange={e => setExpenseAmount(e.target.value === '' ? '' : Number(e.target.value))}
                   placeholder="Contoh: 23000"
-                  className="w-full font-black text-lg px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500 text-rose-600"
+                  className="w-full font-black text-lg px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-1 focus:ring-red-500 text-rose-600"
                 />
               </div>
 
@@ -548,14 +548,14 @@ export const FinanceTab: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowAddExpenseModal(false)}
-                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl"
+                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-md transition disabled:opacity-50"
+                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-black rounded-xl shadow-xs transition disabled:opacity-50 cursor-pointer"
                 >
                   {isSubmitting ? 'Menyimpan...' : (editingExpense ? 'Simpan Penyesuaian (Adjust)' : 'Simpan Pengeluaran')}
                 </button>

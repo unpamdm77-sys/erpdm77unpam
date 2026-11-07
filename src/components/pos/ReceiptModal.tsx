@@ -77,14 +77,14 @@ ${config.storeName}!
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
         {/* Header bar */}
-        <div className="bg-blue-600 text-white px-5 py-4 flex items-center justify-between">
+        <div className="bg-red-600 text-white px-5 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
             <h3 className="font-bold text-base tracking-wide">Struk Pembayaran Sukses</h3>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-blue-100 hover:text-white hover:bg-blue-700 transition"
+            className="p-1.5 rounded-lg text-red-100 hover:text-white hover:bg-red-700 transition"
           >
             <X size={18} />
           </button>
@@ -99,6 +99,11 @@ ${config.storeName}!
           >
             {/* Header */}
             <div className="text-center pb-3 border-b border-dashed border-slate-300">
+              <img
+                src="/assets/aistudio/logo_dm77_d20d4c54.png"
+                alt="Dimsum Mentai 77 Logo"
+                className="w-14 h-14 mx-auto object-contain mb-2 drop-shadow-xs"
+              />
               <h2 className="font-extrabold text-sm text-slate-900 tracking-wider">
                 {config.storeName}
               </h2>
@@ -232,7 +237,7 @@ ${config.storeName}!
           </button>
           <button
             onClick={handlePrint}
-            className="flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition"
+            className="flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-red-600 hover:bg-red-700 shadow-sm transition cursor-pointer"
           >
             <Printer size={15} />
             <span>Cetak Thermal</span>

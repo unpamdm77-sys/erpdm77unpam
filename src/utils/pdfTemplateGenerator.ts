@@ -12,13 +12,13 @@ import { jsPDF } from 'jspdf';
 
 const addHeader = (doc: jsPDF, title: string, subtitle: string) => {
   // Brand Header Banner
-  doc.setFillColor(37, 99, 235); // Blue-600
+  doc.setFillColor(220, 38, 38); // Red-600
   doc.rect(14, 12, 182, 22, 'F');
 
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.text('DIMSUM MENTAI 77 — OUTLET UNPAM VIKTOR', 20, 22);
+  doc.text('DIMSUM MENTAI 77 — OUTLET UNPAM (UNIVERSITAS PAMULANG)', 20, 22);
 
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
@@ -278,7 +278,7 @@ export const generatePurchasingPdfTemplate = () => {
     { po: 'PO-2026-001', date: '01/11/2026', sup: 'Supplier Frozen UNPAM', mat: 'Dimsum Ayam Beku', qty: '500 pcs', price: '1.200', total: '600.000' },
     { po: 'PO-2026-002', date: '02/11/2026', sup: 'CV Mentai Rasa Jaya', mat: 'Saus Mentai 77 Special', qty: '5 kg', price: '85.000', total: '425.000' },
     { po: 'PO-2026-003', date: '03/11/2026', sup: 'Toko Plastik Pamulang', mat: 'Mika / Lunchbox', qty: '300 pcs', price: '650', total: '195.000' },
-    { po: 'PO-2026-004', date: '04/11/2026', sup: 'Toko Gas Viktor', mat: 'Gas Butane Can Torch', qty: '12 klg', price: '18.000', total: '216.000' },
+    { po: 'PO-2026-004', date: '04/11/2026', sup: 'Toko Gas Pamulang', mat: 'Gas Butane Can Torch', qty: '12 klg', price: '18.000', total: '216.000' },
     { po: 'PO-2026-005', date: '.../.../2026', sup: '...............................', mat: '............................', qty: '.......', price: '.......', total: '.......' },
     { po: 'PO-2026-006', date: '.../.../2026', sup: '...............................', mat: '............................', qty: '.......', price: '.......', total: '.......' },
     { po: 'PO-2026-007', date: '.../.../2026', sup: '...............................', mat: '............................', qty: '.......', price: '.......', total: '.......' },

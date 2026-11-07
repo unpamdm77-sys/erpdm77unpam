@@ -157,7 +157,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ onCl
       case 'OWNER':
         return <span className="px-2.5 py-1 bg-amber-100 text-amber-800 text-[10px] font-black rounded-lg border border-amber-300">OWNER (Full Akses)</span>;
       case 'SUPERVISOR':
-        return <span className="px-2.5 py-1 bg-blue-100 text-blue-800 text-[10px] font-black rounded-lg border border-blue-300">KEPALA TOKO / SUPERVISI</span>;
+        return <span className="px-2.5 py-1 bg-red-100 text-red-800 text-[10px] font-black rounded-lg border border-red-300">KEPALA TOKO / SUPERVISI</span>;
       case 'FINANCE':
         return <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-black rounded-lg border border-emerald-300">FINANCE (Keuangan)</span>;
       case 'STAFF':
@@ -326,7 +326,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ onCl
                 <p>Full akses ke semua menu, Setting Akun, Import Excel, Laporan Keuangan, serta bebas ubah menu & stok.</p>
               </div>
               <div className="p-2.5 bg-white rounded-xl border border-slate-200">
-                <p className="font-bold text-blue-700">👔 KEPALA TOKO / SUPERVISI</p>
+                <p className="font-bold text-red-700">👔 KEPALA TOKO / SUPERVISI</p>
                 <p>Akses POS, Purchasing, Opname, Riwayat, Approval Retur. Tidak bisa akses Import Excel, Setting Akun, Laporan Keuangan, & tidak bisa edit stok/menu.</p>
               </div>
               <div className="p-2.5 bg-white rounded-xl border border-slate-200">

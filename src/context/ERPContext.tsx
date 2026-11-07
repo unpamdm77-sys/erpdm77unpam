@@ -307,7 +307,26 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [config, setConfig] = useState<ERPConfig>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.CONFIG);
-    return saved ? { ...INITIAL_CONFIG, ...JSON.parse(saved) } : INITIAL_CONFIG;
+    if (!saved) return INITIAL_CONFIG;
+    try {
+      const parsed = JSON.parse(saved);
+      if (
+        !parsed.storeAddress ||
+        parsed.storeAddress.includes('Viktor') ||
+        parsed.storeAddress.includes('Surya Kencana')
+      ) {
+        parsed.storeAddress = INITIAL_CONFIG.storeAddress;
+      }
+      if (!parsed.storePhone || parsed.storePhone === '0812-9988-7711') {
+        parsed.storePhone = INITIAL_CONFIG.storePhone;
+      }
+      if (!parsed.storeTagline || parsed.storeTagline.includes('Viktor') || parsed.storeTagline.includes('Torched Spesial')) {
+        parsed.storeTagline = INITIAL_CONFIG.storeTagline;
+      }
+      return { ...INITIAL_CONFIG, ...parsed };
+    } catch {
+      return INITIAL_CONFIG;
+    }
   });
 
   // Firebase Cloud Firestore Real-Time Database State

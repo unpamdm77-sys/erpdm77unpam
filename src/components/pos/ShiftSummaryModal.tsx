@@ -74,7 +74,7 @@ export const ShiftSummaryModal: React.FC<ShiftSummaryModalProps> = ({ onClose })
               </div>
               <div className="flex justify-between items-center pt-1.5">
                 <span className="flex items-center gap-1.5 text-slate-600">
-                  <QrCode size={14} className="text-blue-600" />
+                  <QrCode size={14} className="text-amber-600" />
                   <span>QRIS Dinamis:</span>
                 </span>
                 <span className="font-black text-slate-900">{formatRupiah(summary.qrisSales)}</span>

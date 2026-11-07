@@ -129,7 +129,7 @@ export const MaterialsTab: React.FC<MaterialsTabProps> = ({ onSwitchTab }) => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="p-2 bg-blue-100 text-blue-700 rounded-xl">
+            <span className="p-2 bg-red-100 text-red-700 rounded-xl">
               <Boxes size={20} />
             </span>
             <h2 className="text-xl font-black text-slate-900 tracking-tight">
@@ -154,7 +154,7 @@ export const MaterialsTab: React.FC<MaterialsTabProps> = ({ onSwitchTab }) => {
           {canEditMaterials ? (
             <button
               onClick={handleOpenAdd}
-              className="flex items-center space-x-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-xs transition text-xs"
+              className="flex items-center space-x-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-xs transition text-xs"
             >
               <Plus size={16} />
               <span>Tambah Bahan Baru</span>
@@ -169,8 +169,8 @@ export const MaterialsTab: React.FC<MaterialsTabProps> = ({ onSwitchTab }) => {
       </div>
 
       {!canEditMaterials && (
-        <div className="p-3.5 bg-blue-50 border border-blue-200 text-blue-900 rounded-2xl text-xs flex items-center gap-2">
-          <AlertCircle size={16} className="text-blue-600 shrink-0" />
+        <div className="p-3.5 bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl text-xs flex items-center gap-2">
+          <AlertCircle size={16} className="text-amber-600 shrink-0" />
           <span>
             <strong>Informasi Akses:</strong> Akun Anda berstatus <strong>{currentUser.role}</strong> (Mode Lihat). Supervisor dan Staff tidak dapat menambah, mengedit, atau menghapus master data stok bahan baku.
           </span>
@@ -214,7 +214,7 @@ export const MaterialsTab: React.FC<MaterialsTabProps> = ({ onSwitchTab }) => {
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
                   selectedCategory === cat
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-red-600 text-white'
                     : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
                 }`}
               >
@@ -463,7 +463,7 @@ export const MaterialsTab: React.FC<MaterialsTabProps> = ({ onSwitchTab }) => {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-xs"
+                  className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-xs"
                 >
                   Simpan Bahan
                 </button>

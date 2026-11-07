@@ -70,7 +70,7 @@ export const Header: React.FC<HeaderProps> = ({
       case 'OWNER':
         return <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-100 text-amber-800 border border-amber-300">OWNER</span>;
       case 'SUPERVISOR':
-        return <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-blue-100 text-blue-800 border border-blue-300">SPV</span>;
+        return <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-red-100 text-red-800 border border-red-300">SPV</span>;
       case 'FINANCE':
         return <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">FINANCE</span>;
       case 'STAFF':
@@ -92,8 +92,8 @@ export const Header: React.FC<HeaderProps> = ({
           <h1 className="text-sm sm:text-base md:text-lg font-black text-slate-900 tracking-tight leading-tight">
             {TAB_TITLES[activeTab] || 'DIMSUM MENTAI 77'}
           </h1>
-          <p className="text-[10px] text-slate-400 hidden sm:block">
-            Outlet UNPAM Viktor • Sistem ERP & POS Terintegrasi
+          <p className="text-[10px] text-slate-500 font-medium hidden sm:block">
+            Outlet Dimsum Mentai 77 UNPAM (Universitas Pamulang) • Sistem ERP & POS
           </p>
         </div>
       </div>
@@ -107,7 +107,7 @@ export const Header: React.FC<HeaderProps> = ({
             className="flex items-center space-x-2.5 px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-800 text-xs font-semibold transition cursor-pointer"
             title="Klik untuk beralih akun / login"
           >
-            <div className="w-5 h-5 rounded-full bg-blue-600 text-white font-black text-[10px] flex items-center justify-center">
+            <div className="w-5 h-5 rounded-full bg-red-600 text-white font-black text-[10px] flex items-center justify-center">
               {currentUser.name.charAt(0)}
             </div>
             <span className="hidden sm:inline font-bold text-[11px]">{currentUser.name}</span>
@@ -152,13 +152,13 @@ export const Header: React.FC<HeaderProps> = ({
               firestoreStatus === 'connected'
                 ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
                 : firestoreStatus === 'connecting'
-                ? 'bg-blue-50 text-blue-800 border-blue-300 hover:bg-blue-100'
+                ? 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
                 : 'bg-rose-50 text-rose-800 border-rose-300 hover:bg-rose-100'
             }`}
           >
             <RefreshCw
               size={13}
-              className={`${isManualSyncing ? 'animate-spin text-blue-600' : firestoreStatus === 'connected' ? 'text-emerald-600 hover:rotate-180 transition-transform duration-500' : 'text-rose-600'}`}
+              className={`${isManualSyncing ? 'animate-spin text-red-600' : firestoreStatus === 'connected' ? 'text-emerald-600 hover:rotate-180 transition-transform duration-500' : 'text-rose-600'}`}
             />
             <span className="hidden sm:inline text-[11px]">
               {isManualSyncing
@@ -195,7 +195,7 @@ export const Header: React.FC<HeaderProps> = ({
             isGoogleConnected || cloudSyncStatus === 'connected'
               ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
               : isSyncing || cloudSyncStatus === 'syncing'
-              ? 'bg-blue-50 text-blue-800 border-blue-300 hover:bg-blue-100'
+              ? 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
               : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
           }`}
         >
@@ -205,7 +205,7 @@ export const Header: React.FC<HeaderProps> = ({
               isGoogleConnected || cloudSyncStatus === 'connected'
                 ? 'text-emerald-600'
                 : isSyncing || cloudSyncStatus === 'syncing'
-                ? 'text-blue-500 animate-spin'
+                ? 'text-amber-500 animate-spin'
                 : 'text-slate-400'
             }
           />
@@ -227,12 +227,12 @@ export const Header: React.FC<HeaderProps> = ({
         {activeTab !== 'pos' && (
           <button
             onClick={() => onSwitchTab('pos')}
-            className="flex items-center space-x-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-xs transition text-xs cursor-pointer"
+            className="flex items-center space-x-1.5 px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white font-black rounded-xl shadow-xs transition text-xs cursor-pointer"
           >
             <Receipt size={15} />
             <span className="hidden sm:inline">Kasir POS</span>
             {cart.length > 0 && (
-              <span className="w-4 h-4 rounded-full bg-white text-blue-600 text-[9px] flex items-center justify-center font-black">
+              <span className="w-4 h-4 rounded-full bg-white text-red-600 text-[9px] flex items-center justify-center font-black">
                 {cart.length}
               </span>
             )}

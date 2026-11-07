@@ -42,37 +42,35 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center items-center p-4 relative overflow-hidden font-sans">
-      {/* Background Decorative Glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-amber-500/10 blur-[130px] pointer-events-none rounded-full"></div>
-      <div className="absolute -bottom-20 right-10 w-[400px] h-[300px] bg-rose-500/10 blur-[120px] pointer-events-none rounded-full"></div>
-
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center items-center p-4 relative font-sans">
       <div className="w-full max-w-2xl relative z-10 space-y-5">
         {/* Main Login Card */}
-        <div className="bg-slate-900/95 border border-slate-800 rounded-3xl shadow-2xl backdrop-blur-md overflow-hidden">
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden">
           
-          {/* Header Banner */}
-          <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 p-6 md:p-8 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center space-x-3.5">
-              <div className="w-13 h-13 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center font-black shadow-lg shadow-amber-500/30 shrink-0">
-                <Flame size={28} className="text-slate-950" />
-              </div>
+          {/* Header Banner - Solid Clean */}
+          <div className="bg-slate-900 p-6 md:p-8 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center space-x-4">
+              <img
+                src="/assets/aistudio/logo_dm77_d20d4c54.png"
+                alt="Dimsum Mentai 77 Logo"
+                className="w-16 h-16 object-contain drop-shadow-md shrink-0 rounded-2xl bg-white p-1 border border-amber-400/40"
+              />
               <div>
                 <div className="flex items-center space-x-2">
                   <h1 className="font-black text-xl tracking-wider text-amber-400 leading-tight">
                     DIMSUM MENTAI 77
                   </h1>
-                  <span className="px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-bold border border-amber-400/30">
-                    UNPAM VIKTOR
+                  <span className="px-2 py-0.5 rounded-full bg-red-600/20 text-amber-300 text-[10px] font-bold border border-amber-400/40">
+                    UNPAM (Universitas Pamulang)
                   </span>
                 </div>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-slate-400 mt-1">
                   Sistem ERP & Point of Sale (POS) Outlet Terintegrasi
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center space-x-2 text-[11px] text-slate-400 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700/60 self-start sm:self-auto">
+            <div className="flex items-center space-x-2 text-[11px] text-slate-400 bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700 self-start sm:self-auto">
               <Shield size={14} className="text-emerald-400" />
               <span>Sesi Aman (RBAC)</span>
             </div>
@@ -152,10 +150,10 @@ export const LoginPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full mt-4 py-3.5 px-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-amber-500/20 flex items-center justify-center space-x-2 transition disabled:opacity-50 cursor-pointer"
+                className="w-full mt-4 py-3.5 px-4 bg-red-600 hover:bg-red-500 text-white font-black text-xs rounded-xl shadow-lg shadow-red-600/30 flex items-center justify-center space-x-2 transition disabled:opacity-50 cursor-pointer"
               >
                 {isLoading ? (
-                  <span className="inline-block w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></span>
+                  <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                 ) : (
                   <>
                     <span>Masuk ke Sistem ERP</span>
@@ -176,8 +174,8 @@ export const LoginPage: React.FC = () => {
         </div>
 
         {/* Footer Credit */}
-        <div className="text-center text-[11px] text-slate-500">
-          DIMSUM MENTAI 77 UNPAM • Pamulang Tangerang Selatan • Sistem ERP & POS Terintegrasi Cloud
+        <div className="text-center text-[11px] text-slate-500 max-w-lg mx-auto leading-relaxed">
+          DIMSUM MENTAI 77 UNPAM • Jl. Pamulang Permai 1 No.Samping, Gapura, Kec. Pamulang, Tangsel • Telp/WA: 0819-9645-1323
         </div>
       </div>
     </div>

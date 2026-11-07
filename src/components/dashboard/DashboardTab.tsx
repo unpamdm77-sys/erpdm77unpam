@@ -129,30 +129,37 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ onSwitchTab }) => {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
-      {/* Top Banner & Quick Tag */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-blue-700 via-blue-800 to-slate-900 text-white p-6 rounded-3xl shadow-lg border border-blue-500/20">
-        <div className="space-y-1">
-          <div className="inline-flex items-center space-x-2 bg-blue-500/20 text-blue-200 px-3 py-1 rounded-full text-xs font-bold border border-blue-400/30">
-            <Flame size={14} className="text-blue-300" />
-            <span>Kantin & Kuliner UNPAM Viktor</span>
+      {/* Top Banner & Quick Tag - Solid High Contrast */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 text-white p-4 sm:p-6 rounded-3xl shadow-sm border border-slate-800">
+        <div className="flex items-center space-x-3.5">
+          <img
+            src="/assets/aistudio/logo_dm77_d20d4c54.png"
+            alt="Dimsum Mentai 77 Logo"
+            className="w-16 h-16 object-contain drop-shadow-md shrink-0 rounded-2xl bg-white p-1 border border-amber-400/40"
+          />
+          <div className="space-y-1">
+            <div className="inline-flex items-center space-x-1.5 bg-slate-800 text-amber-400 px-3 py-0.5 rounded-full text-[11px] font-bold border border-slate-700">
+              <Flame size={13} className="text-amber-400" />
+              <span>Outlet Dimsum Mentai 77 UNPAM (Universitas Pamulang)</span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">Dashboard Operasional Dimsum</h2>
+            <p className="text-slate-300 text-xs sm:text-sm">
+              Pantau penjualan realtime, target omset berkala, stok bahan mentai, dan laba kotor hari ini.
+            </p>
           </div>
-          <h2 className="text-2xl font-black tracking-tight">Dashboard Operasional Dimsum</h2>
-          <p className="text-blue-100/80 text-xs md:text-sm">
-            Pantau penjualan realtime, target omset berkala, stok bahan mentai, dan laba kotor hari ini.
-          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
           <button
             onClick={() => onSwitchTab('pos')}
-            className="flex items-center space-x-2 bg-white hover:bg-blue-50 text-blue-900 font-black px-4 py-2.5 rounded-xl shadow-md transition text-xs"
+            className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 text-white font-black px-4 py-2.5 rounded-xl shadow-xs transition text-xs cursor-pointer"
           >
             <Receipt size={16} />
             <span>Buka Kasir (POS)</span>
           </button>
           <button
             onClick={() => onSwitchTab('purchasing')}
-            className="flex items-center space-x-2 bg-blue-900/60 hover:bg-blue-900 text-white font-medium px-4 py-2.5 rounded-xl border border-blue-400/30 transition text-xs"
+            className="flex items-center space-x-2 bg-slate-800 hover:bg-slate-700 text-white font-medium px-4 py-2.5 rounded-xl border border-slate-700 transition text-xs cursor-pointer"
           >
             <Truck size={16} />
             <span>Restock Bahan</span>
@@ -161,11 +168,11 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ onSwitchTab }) => {
       </div>
 
       {/* TARGET PENJUALAN SECTION (Harian, Mingguan, Bulanan) */}
-      <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-4">
+      <div className="bg-white rounded-3xl p-4 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
           <div className="flex items-center space-x-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-blue-500/10 text-blue-600 flex items-center justify-center font-bold">
-              <Target size={22} className="text-blue-600" />
+            <div className="w-10 h-10 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center font-bold border border-red-100">
+              <Target size={22} className="text-red-600" />
             </div>
             <div>
               <h3 className="font-black text-slate-900 text-base">Target Penjualan Outlet UNPAM</h3>
@@ -177,7 +184,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ onSwitchTab }) => {
 
           <button
             onClick={handleOpenTargetModal}
-            className="flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-blue-50 text-slate-800 hover:text-blue-900 font-bold text-xs transition self-start sm:self-auto border border-slate-200 hover:border-blue-300"
+            className="flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-red-50 text-slate-800 hover:text-red-700 font-bold text-xs transition self-start sm:self-auto border border-slate-200 hover:border-red-200 cursor-pointer"
           >
             <Edit3 size={15} />
             <span>Atur Target Penjualan</span>
@@ -186,14 +193,14 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ onSwitchTab }) => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
           {/* Target Harian */}
-          <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50/70 to-blue-100/30 border border-blue-200/70 space-y-3">
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-black text-blue-900 uppercase tracking-wide">Target Harian</span>
+              <span className="text-xs font-black text-slate-900 uppercase tracking-wide">Target Harian</span>
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
                 dailyProgress >= 100
-                  ? 'bg-emerald-500 text-white'
+                  ? 'bg-emerald-600 text-white'
                   : dailyProgress >= 70
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-red-600 text-white'
                   : 'bg-slate-200 text-slate-700'
               }`}>
                 {dailyProgress >= 100 ? '🎉 Tercapai!' : `${dailyProgress}%`}
@@ -215,10 +222,10 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ onSwitchTab }) => {
             </div>
 
             {/* Progress Bar */}
-            <div className="w-full bg-slate-200/80 h-2.5 rounded-full overflow-hidden">
+            <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-700 ${
-                  dailyProgress >= 100 ? 'bg-emerald-500' : 'bg-gradient-to-r from-blue-500 to-blue-600'
+                  dailyProgress >= 100 ? 'bg-emerald-500' : 'bg-red-600'
                 }`}
                 style={{ width: `${Math.min(100, dailyProgress)}%` }}
               ></div>
@@ -226,14 +233,14 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ onSwitchTab }) => {
           </div>
 
           {/* Target Mingguan (7 Hari) */}
-          <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50/70 to-blue-100/30 border border-blue-200/70 space-y-3">
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-black text-blue-900 uppercase tracking-wide">Target Mingguan (7 Hari)</span>
+              <span className="text-xs font-black text-slate-900 uppercase tracking-wide">Target Mingguan (7 Hari)</span>
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
                 weeklyProgress >= 100
-                  ? 'bg-emerald-500 text-white'
+                  ? 'bg-emerald-600 text-white'
                   : weeklyProgress >= 70
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-red-600 text-white'
                   : 'bg-slate-200 text-slate-700'
               }`}>
                 {weeklyProgress >= 100 ? '🎉 Tercapai!' : `${weeklyProgress}%`}
@@ -255,10 +262,10 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ onSwitchTab }) => {
             </div>
 
             {/* Progress Bar */}
-            <div className="w-full bg-slate-200/80 h-2.5 rounded-full overflow-hidden">
+            <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-700 ${
-                  weeklyProgress >= 100 ? 'bg-emerald-500' : 'bg-gradient-to-r from-blue-500 to-blue-600'
+                  weeklyProgress >= 100 ? 'bg-emerald-500' : 'bg-red-600'
                 }`}
                 style={{ width: `${Math.min(100, weeklyProgress)}%` }}
               ></div>
@@ -266,14 +273,14 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ onSwitchTab }) => {
           </div>
 
           {/* Target Bulanan */}
-          <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50/70 to-emerald-100/30 border border-emerald-200/70 space-y-3">
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-black text-emerald-900 uppercase tracking-wide">Target Bulanan (Bulan Ini)</span>
+              <span className="text-xs font-black text-slate-900 uppercase tracking-wide">Target Bulanan (Bulan Ini)</span>
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
                 monthlyProgress >= 100
-                  ? 'bg-emerald-500 text-white'
-                  : monthlyProgress >= 70
                   ? 'bg-emerald-600 text-white'
+                  : monthlyProgress >= 70
+                  ? 'bg-amber-600 text-white'
                   : 'bg-slate-200 text-slate-700'
               }`}>
                 {monthlyProgress >= 100 ? '🎉 Tercapai!' : `${monthlyProgress}%`}
@@ -295,10 +302,10 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ onSwitchTab }) => {
             </div>
 
             {/* Progress Bar */}
-            <div className="w-full bg-slate-200/80 h-2.5 rounded-full overflow-hidden">
+            <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-700 ${
-                  monthlyProgress >= 100 ? 'bg-emerald-500' : 'bg-gradient-to-r from-emerald-500 to-emerald-600'
+                  monthlyProgress >= 100 ? 'bg-emerald-500' : 'bg-amber-500'
                 }`}
                 style={{ width: `${Math.min(100, monthlyProgress)}%` }}
               ></div>
@@ -327,7 +334,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ onSwitchTab }) => {
         <div className="bg-white p-5 rounded-2xl shadow-xs border border-slate-200/80 hover:shadow-md transition">
           <div className="flex items-center justify-between">
             <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Transaksi Sukses</span>
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
               <ShoppingBag size={20} />
             </div>
           </div>
@@ -422,7 +429,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ onSwitchTab }) => {
                     {/* Visual bar */}
                     <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
                       <div
-                        className="bg-gradient-to-r from-amber-500 to-amber-600 h-full rounded-full transition-all duration-500"
+                        className="bg-amber-500 h-full rounded-full transition-all duration-500"
                         style={{ width: `${percent}%` }}
                       ></div>
                     </div>

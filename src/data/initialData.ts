@@ -2,9 +2,9 @@ import { Material, MenuItem, PurchaseOrder, Expense, Transaction, ERPConfig, Use
 
 export const INITIAL_CONFIG: ERPConfig = {
   storeName: 'DIMSUM MENTAI 77 UNPAM',
-  storeTagline: 'Dimsum Halal, Gurih, Saus Mentai Torched Spesial',
-  storeAddress: 'Jl. Surya Kencana No. 77 (Depan Kampus Viktor UNPAM), Pamulang, Tangerang Selatan',
-  storePhone: '0812-9988-7711',
+  storeTagline: 'Outlet Dimsum Mentai 77 UNPAM (Universitas Pamulang)',
+  storeAddress: 'Jl. Pamulang Permai 1 No.Samping, Gapura, Kec. Pamulang, Kota Tangerang Selatan, Banten 15417',
+  storePhone: '0819-9645-1323',
   cashierName: 'Kasir Shift 1 (Rian)',
   googleWebAppUrl: '',
   autoSyncGoogleSheet: false,
@@ -56,7 +56,7 @@ export const INITIAL_USERS: UserAccount[] = [
     name: 'Dimas Prasetyo (Kepala Toko UNPAM)',
     role: 'SUPERVISOR',
     phone: '0857-1122-3344',
-    address: 'Jl. Pajajaran Viktor Pamulang',
+    address: 'Jl. Pamulang Permai 1, Tangerang Selatan',
     joinDate: '2026-02-15',
     isActive: true
   },
@@ -495,7 +495,7 @@ export const INITIAL_TRANSACTIONS: Transaction[] = [
     id: 'trx-103',
     invoiceNo: 'INV-20261102-003',
     date: '2026-11-02T13:45:00',
-    customer: 'Fajar UNPAM Viktor',
+    customer: 'Fajar Mahasiswa UNPAM',
     orderType: 'Dine In',
     tableNo: 'Meja 01',
     paymentMethod: 'QRIS',

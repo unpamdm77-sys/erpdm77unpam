@@ -157,7 +157,7 @@ export const GoogleSheetsConnectModal: React.FC<GoogleSheetsConnectModalProps> =
         {/* Body */}
         <div className="p-6 overflow-y-auto space-y-5 flex-1">
           {/* Cloud Firestore Status Banner */}
-          <div className="p-4 bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md border border-slate-700/60">
+          <div className="p-4 bg-slate-900 rounded-2xl text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md border border-slate-700/80">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0">
                 <Cloud size={20} className={firestoreStatus === 'connected' ? 'text-emerald-400' : 'text-amber-400'} />
@@ -329,7 +329,7 @@ export const GoogleSheetsConnectModal: React.FC<GoogleSheetsConnectModalProps> =
                 </div>
 
                 <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-1">
-                  <div className="flex items-center space-x-1.5 text-blue-700 font-bold">
+                  <div className="flex items-center space-x-1.5 text-red-700 font-bold">
                     <HardDrive size={14} />
                     <span>Otomatis di Drive</span>
                   </div>

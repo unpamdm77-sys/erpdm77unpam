@@ -71,10 +71,11 @@ const AppContent: React.FC = () => {
           onSwitchTab={setActiveTab}
         />
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">
+        <main className="flex-1 overflow-y-auto p-2.5 sm:p-4 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
             {activeTab === 'dashboard' && <DashboardTab onSwitchTab={setActiveTab} />}
             {activeTab === 'pos' && <PosTab />}
+            {activeTab === 'cashier' && <CashierManagementTab onSwitchTab={setActiveTab} />}
             {activeTab === 'purchasing' && <PurchasingTab />}
             {activeTab === 'products' && <ProductsTab />}
             {activeTab === 'materials' && <MaterialsTab onSwitchTab={setActiveTab} />}
