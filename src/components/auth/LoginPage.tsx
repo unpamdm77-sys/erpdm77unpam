@@ -175,7 +175,7 @@ export const LoginPage: React.FC = () => {
 
         {/* Footer Credit */}
         <div className="text-center text-[11px] text-slate-500 max-w-lg mx-auto leading-relaxed">
-          DIMSUM MENTAI 77 UNPAM • Jl. Pamulang Permai 1 No.Samping, Gapura, Kec. Pamulang, Tangsel • Telp/WA: 0819-9645-1323
+          DIMSUM MENTAI 77 UNPAM • Jl. Pamulang Permai 1 No.Samping Gapura, Kec. Pamulang, Tangsel • Telp/WA: 0819-9645-1323
         </div>
       </div>
     </div>

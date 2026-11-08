@@ -67,6 +67,7 @@ export const PosTab: React.FC = () => {
     parkedOrders,
     config,
     updateConfig,
+    currentUser,
     addQuickToppingToCartItem
   } = useERP();
 
@@ -469,8 +470,8 @@ export const PosTab: React.FC = () => {
             ) : (
               <div>
                 <label className="text-[10px] font-semibold text-slate-400 block mb-0.5">Petugas Kasir</label>
-                <div className="text-xs font-medium px-2.5 py-1.5 rounded-lg bg-slate-50 text-slate-600 truncate border border-slate-100">
-                  {config.cashierName}
+                <div className="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-orange-50/70 text-orange-800 truncate border border-orange-200/60">
+                  {currentUser?.name || currentUser?.username || config.cashierName || 'Kasir'}
                 </div>
               </div>
             )}

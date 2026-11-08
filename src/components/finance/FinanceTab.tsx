@@ -324,8 +324,12 @@ export const FinanceTab: React.FC = () => {
                   <p className="text-xs text-slate-300">Setelah seluruh HPP & Biaya Operasional</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xl font-black text-emerald-400">{formatRupiah(netProfit)}</p>
-                  <p className="text-[11px] font-semibold text-slate-300">Margin: {netMarginPercent}%</p>
+                  <p className={`text-xl font-black ${netProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {formatRupiah(netProfit)}
+                  </p>
+                  <p className={`text-[11px] font-semibold ${netProfit >= 0 ? 'text-slate-300' : 'text-rose-300'}`}>
+                    Margin: {netMarginPercent}% {netProfit < 0 ? '(Rugi)' : '(Untung)'}
+                  </p>
                 </div>
               </div>
             </div>

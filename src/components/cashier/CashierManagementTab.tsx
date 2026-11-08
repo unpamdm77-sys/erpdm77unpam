@@ -120,7 +120,7 @@ export const CashierManagementTab: React.FC<CashierManagementTabProps> = ({ onSw
     doc.text('DIMSUM MENTAI 77 — OUTLET UNPAM (UNIVERSITAS PAMULANG)', 20, 20);
     doc.setFontSize(7.5);
     doc.setFont('helvetica', 'normal');
-    doc.text('Jl. Pamulang Permai 1 No.Samping, Gapura, Kec. Pamulang, Tangsel • WA: 0819-9645-1323', 20, 25);
+    doc.text('Jl. Pamulang Permai 1 No.Samping Gapura, Kec. Pamulang, Tangsel • WA: 0819-9645-1323', 20, 25);
     doc.text('Laporan Rekapitulasi Kasir & Pemisahan Metode Pembayaran', 20, 30);
 
     // Title

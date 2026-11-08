@@ -55,8 +55,7 @@ export const ImportExportTab: React.FC<ImportExportTabProps> = ({ onOpenGoogleSh
     importMenuBatch,
     importBOMBatch,
     addPurchase,
-    addExpense,
-    resetAllData
+    addExpense
   } = useERP();
 
   const [activeImportTab, setActiveImportTab] = useState<ImportType>('materials');

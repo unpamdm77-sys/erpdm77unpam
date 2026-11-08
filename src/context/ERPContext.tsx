@@ -174,6 +174,7 @@ interface ERPContextType {
   // History & Refund
   refundTransaction: (transactionId: string) => void;
   deleteTransaction: (transactionId: string, restoreStock?: boolean) => void;
+  clearAllTransactions: () => void;
 
   // Google Sheets Workspace Realtime Database (1-Click Google Drive Sync)
   googleUser: FirebaseUser | null;
@@ -244,27 +245,42 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
   const [materials, setMaterials] = useState<Material[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.MATERIALS);
-    return saved ? JSON.parse(saved) : INITIAL_MATERIALS;
+    if (saved !== null) {
+      try { return JSON.parse(saved); } catch {}
+    }
+    return INITIAL_MATERIALS;
   });
 
   const [menuItems, setMenuItems] = useState<MenuItem[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.MENU);
-    return saved ? JSON.parse(saved) : INITIAL_MENU_ITEMS;
+    if (saved !== null) {
+      try { return JSON.parse(saved); } catch {}
+    }
+    return INITIAL_MENU_ITEMS;
   });
 
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
-    return saved ? JSON.parse(saved) : INITIAL_TRANSACTIONS;
+    if (saved !== null) {
+      try { return JSON.parse(saved); } catch {}
+    }
+    return INITIAL_TRANSACTIONS;
   });
 
   const [purchases, setPurchases] = useState<PurchaseOrder[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.PURCHASES);
-    return saved ? JSON.parse(saved) : INITIAL_PURCHASES;
+    if (saved !== null) {
+      try { return JSON.parse(saved); } catch {}
+    }
+    return INITIAL_PURCHASES;
   });
 
   const [expenses, setExpenses] = useState<Expense[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.EXPENSES);
-    return saved ? JSON.parse(saved) : INITIAL_EXPENSES;
+    if (saved !== null) {
+      try { return JSON.parse(saved); } catch {}
+    }
+    return INITIAL_EXPENSES;
   });
 
   const [adjustments, setAdjustments] = useState<StockAdjustment[]>(() => {
@@ -706,64 +722,42 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // 1. Materials listener
     const unsubMaterials = onSnapshot(collection(db, 'materials'), snapshot => {
-      if (!snapshot.empty) {
-        const cloudMaterials = snapshot.docs.map(d => d.data() as Material);
-        setMaterials(cloudMaterials);
-      } else {
-        INITIAL_MATERIALS.forEach(m => saveMaterialToFirestore(m));
-      }
+      const cloudMaterials = snapshot.docs.map(d => d.data() as Material);
+      setMaterials(cloudMaterials);
     }, err => handleFirestoreError(err, OperationType.LIST, 'materials'));
 
     // 2. Menu items listener
     const unsubMenu = onSnapshot(collection(db, 'menuItems'), snapshot => {
-      if (!snapshot.empty) {
-        const cloudMenu = snapshot.docs.map(d => d.data() as MenuItem);
-        setMenuItems(cloudMenu);
-      } else {
-        INITIAL_MENU_ITEMS.forEach(mi => saveMenuItemToFirestore(mi));
-      }
+      const cloudMenu = snapshot.docs.map(d => d.data() as MenuItem);
+      setMenuItems(cloudMenu);
     }, err => handleFirestoreError(err, OperationType.LIST, 'menuItems'));
 
     // 3. Transactions listener
     const unsubTransactions = onSnapshot(collection(db, 'transactions'), snapshot => {
-      if (!snapshot.empty) {
-        const cloudTrx = snapshot.docs.map(d => d.data() as Transaction);
-        cloudTrx.sort((a, b) => (b.date || b.id).localeCompare(a.date || a.id));
-        setTransactions(cloudTrx);
-      } else {
-        INITIAL_TRANSACTIONS.forEach(t => saveTransactionToFirestore(t));
-      }
+      const cloudTrx = snapshot.docs.map(d => d.data() as Transaction);
+      cloudTrx.sort((a, b) => (b.date || b.id).localeCompare(a.date || a.id));
+      setTransactions(cloudTrx);
     }, err => handleFirestoreError(err, OperationType.LIST, 'transactions'));
 
     // 4. Purchases listener
     const unsubPurchases = onSnapshot(collection(db, 'purchases'), snapshot => {
-      if (!snapshot.empty) {
-        const cloudPurchases = snapshot.docs.map(d => d.data() as PurchaseOrder);
-        cloudPurchases.sort((a, b) => (b.date || b.id).localeCompare(a.date || a.id));
-        setPurchases(cloudPurchases);
-      } else {
-        INITIAL_PURCHASES.forEach(p => savePurchaseToFirestore(p));
-      }
+      const cloudPurchases = snapshot.docs.map(d => d.data() as PurchaseOrder);
+      cloudPurchases.sort((a, b) => (b.date || b.id).localeCompare(a.date || a.id));
+      setPurchases(cloudPurchases);
     }, err => handleFirestoreError(err, OperationType.LIST, 'purchases'));
 
     // 5. Expenses listener
     const unsubExpenses = onSnapshot(collection(db, 'expenses'), snapshot => {
-      if (!snapshot.empty) {
-        const cloudExpenses = snapshot.docs.map(d => d.data() as Expense);
-        cloudExpenses.sort((a, b) => (b.date || b.id).localeCompare(a.date || a.id));
-        setExpenses(cloudExpenses);
-      } else {
-        INITIAL_EXPENSES.forEach(e => saveExpenseToFirestore(e));
-      }
+      const cloudExpenses = snapshot.docs.map(d => d.data() as Expense);
+      cloudExpenses.sort((a, b) => (b.date || b.id).localeCompare(a.date || a.id));
+      setExpenses(cloudExpenses);
     }, err => handleFirestoreError(err, OperationType.LIST, 'expenses'));
 
     // 6. Adjustments listener
     const unsubAdjustments = onSnapshot(collection(db, 'adjustments'), snapshot => {
-      if (!snapshot.empty) {
-        const cloudAdj = snapshot.docs.map(d => d.data() as StockAdjustment);
-        cloudAdj.sort((a, b) => (b.date || b.id).localeCompare(a.date || a.id));
-        setAdjustments(cloudAdj);
-      }
+      const cloudAdj = snapshot.docs.map(d => d.data() as StockAdjustment);
+      cloudAdj.sort((a, b) => (b.date || b.id).localeCompare(a.date || a.id));
+      setAdjustments(cloudAdj);
     }, err => handleFirestoreError(err, OperationType.LIST, 'adjustments'));
 
     // 7. Users listener
@@ -1149,7 +1143,7 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       totalHpp,
       grossProfit,
       status: 'COMPLETED',
-      cashierName: config.cashierName || 'Kasir',
+      cashierName: currentUser?.name || currentUser?.username || config.cashierName || 'Kasir',
       syncedToGoogleSheet: false
     };
 
@@ -1537,6 +1531,12 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     deleteTransactionFromFirestore(transactionId);
   };
 
+  const clearAllTransactions = () => {
+    transactions.forEach(t => deleteTransactionFromFirestore(t.id));
+    setTransactions([]);
+    localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify([]));
+  };
+
   // Materials CRUD
   const addMaterial = (mat: Omit<Material, 'id' | 'lastUpdated'>) => {
     const newMat: Material = {
@@ -1747,7 +1747,7 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const grossProfit = netSales - totalHpp;
 
     return {
-      cashierName: config.cashierName,
+      cashierName: currentUser?.name || currentUser?.username || config.cashierName || 'Kasir',
       startTime: shiftTrx.length > 0 ? shiftTrx[shiftTrx.length - 1].date : new Date().toISOString(),
       totalTransactions: shiftTrx.length,
       grossSales,
@@ -2108,6 +2108,7 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deleteAdjustment,
         refundTransaction,
         deleteTransaction,
+        clearAllTransactions,
         cloudSyncStatus,
         lastCloudSyncTime,
         pullFromGoogleSheet,

@@ -16,6 +16,7 @@ import {
   Lock,
   AlertCircle
 } from 'lucide-react';
+import { DecimalInput } from '../common/DecimalInput';
 
 export const PurchasingTab: React.FC = () => {
   const { materials, purchases, addPurchase, updatePurchase, deletePurchase, currentUser } = useERP();
@@ -360,28 +361,26 @@ export const PurchasingTab: React.FC = () => {
                   <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
                     Jumlah Masuk (Qty dalam {selectedMaterial?.unit})
                   </label>
-                  <input
-                    type="number"
-                    required
-                    min="1"
+                  <DecimalInput
                     value={qty}
-                    onChange={e => setQty(e.target.value === '' ? '' : Number(e.target.value))}
-                    placeholder="Contoh: 100"
-                    className="w-full font-bold px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-1 focus:ring-red-500"
+                    onChange={val => setQty(val)}
+                    unit={selectedMaterial?.unit}
+                    min={0.01}
+                    placeholder="0"
+                    className="w-full font-bold px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-1 focus:ring-red-500 bg-white"
                   />
                 </div>
                 <div>
                   <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
                     Harga Beli per {selectedMaterial?.unit} (Rp)
                   </label>
-                  <input
-                    type="number"
-                    required
-                    min="1"
+                  <DecimalInput
                     value={unitPrice}
-                    onChange={e => setUnitPrice(e.target.value === '' ? '' : Number(e.target.value))}
-                    placeholder="Contoh: 650"
-                    className="w-full font-bold px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-1 focus:ring-red-500"
+                    onChange={val => setUnitPrice(val)}
+                    min={0}
+                    placeholder="0"
+                    showQuickHelpers={false}
+                    className="w-full font-bold px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-1 focus:ring-red-500 bg-white"
                   />
                 </div>
               </div>

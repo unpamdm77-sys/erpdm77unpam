@@ -12,6 +12,7 @@ import {
   RotateCcw,
   Trash2
 } from 'lucide-react';
+import { DecimalInput } from '../common/DecimalInput';
 
 export const AdjustmentTab: React.FC = () => {
   const { materials, adjustments, addAdjustment, deleteAdjustment, config, currentUser } = useERP();
@@ -52,7 +53,7 @@ export const AdjustmentTab: React.FC = () => {
       materialId: selectedMat.id,
       actualStock,
       reason,
-      adjustedBy: config.cashierName
+      adjustedBy: currentUser?.name || currentUser?.username || config.cashierName || 'Kasir'
     });
 
     setShowModal(false);
@@ -253,13 +254,13 @@ export const AdjustmentTab: React.FC = () => {
                   <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
                     Hasil Hitung Fisik Nyata ({selectedMat?.unit})
                   </label>
-                  <input
-                    type="number"
-                    required
-                    min="0"
+                  <DecimalInput
                     value={actualStock}
-                    onChange={e => setActualStock(e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full font-black text-lg px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    onChange={val => setActualStock(val)}
+                    unit={selectedMat?.unit}
+                    min={0}
+                    placeholder="0"
+                    className="w-full font-black text-lg px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-1 focus:ring-amber-500 bg-white"
                   />
                 </div>
 

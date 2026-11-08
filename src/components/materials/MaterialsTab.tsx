@@ -17,6 +17,7 @@ import {
   Lock,
   AlertCircle
 } from 'lucide-react';
+import { DecimalInput } from '../common/DecimalInput';
 
 interface MaterialsTabProps {
   onSwitchTab?: (tabId: string) => void;
@@ -403,41 +404,38 @@ export const MaterialsTab: React.FC<MaterialsTabProps> = ({ onSwitchTab }) => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Stok Fisik</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="any"
-                    required
+                  <DecimalInput
                     value={stock}
-                    onChange={e => setStock(e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold text-slate-900"
+                    onChange={val => setStock(val)}
+                    unit={unit}
+                    min={0}
+                    placeholder="0"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold text-slate-900 bg-white"
                   />
                 </div>
                 <div>
                   <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Batas Min</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="any"
-                    required
+                  <DecimalInput
                     value={minStock}
-                    onChange={e => setMinStock(e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold text-rose-600"
+                    onChange={val => setMinStock(val)}
+                    unit={unit}
+                    min={0}
+                    placeholder="0"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold text-rose-600 bg-white"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Biaya Satuan</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="any"
-                    required
+                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Biaya Satuan (Rp)</label>
+                  <DecimalInput
                     value={costPerUnit}
-                    onChange={e => setCostPerUnit(e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold text-emerald-600"
+                    onChange={val => setCostPerUnit(val)}
+                    min={0}
+                    placeholder="0"
+                    showQuickHelpers={false}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold text-emerald-600 bg-white"
                   />
                 </div>
               </div>

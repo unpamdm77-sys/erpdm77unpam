@@ -36,7 +36,7 @@ export const generateExecutiveFinancePdf = (data: FinancePdfData) => {
   doc.setFont('helvetica', 'normal');
   doc.text('Laporan Keuangan Eksekutif & Laba Rugi (Profit & Loss Statement)', 20, 28);
   doc.setFontSize(8);
-  doc.text('Jl. Pamulang Permai 1 No.Samping, Gapura, Kec. Pamulang, Tangsel • WA: 0819-9645-1323', 20, 33);
+  doc.text('Jl. Pamulang Permai 1 No.Samping Gapura, Kec. Pamulang, Tangsel • WA: 0819-9645-1323', 20, 33);
 
   // 2. DOCUMENT TITLE & PERIODE INFO BOX
   doc.setTextColor(15, 23, 42); // Slate-900
@@ -109,16 +109,32 @@ export const generateExecutiveFinancePdf = (data: FinancePdfData) => {
   doc.setFontSize(6.5);
   doc.text(`Margin: ${data.grossMarginPercent}%`, card3X + 3, cardY + 16.5);
 
-  // Card 4: Laba Bersih
+  // Card 4: Laba Bersih (Green if >= 0, Red if < 0)
   const card4X = card3X + cardW + gap;
-  doc.setFillColor(239, 246, 255);
-  doc.setDrawColor(147, 197, 253);
+  const isNetPositive = data.netProfit >= 0;
+  if (isNetPositive) {
+    doc.setFillColor(236, 253, 245);
+    doc.setDrawColor(167, 243, 208);
+  } else {
+    doc.setFillColor(254, 242, 242);
+    doc.setDrawColor(254, 202, 202);
+  }
   doc.roundedRect(card4X, cardY, cardW, cardH, 2, 2, 'FD');
-  doc.setTextColor(29, 78, 216);
+  
+  if (isNetPositive) {
+    doc.setTextColor(4, 120, 87);
+  } else {
+    doc.setTextColor(185, 28, 28);
+  }
   doc.setFontSize(7);
   doc.setFont('helvetica', 'bold');
   doc.text('LABA BERSIH (NET)', card4X + 3, cardY + 5.5);
-  doc.setTextColor(37, 99, 235);
+
+  if (isNetPositive) {
+    doc.setTextColor(5, 150, 105);
+  } else {
+    doc.setTextColor(220, 38, 38);
+  }
   doc.setFontSize(9.5);
   doc.text(formatRupiah(data.netProfit), card4X + 3, cardY + 11.5);
   doc.setFontSize(6.5);
@@ -151,14 +167,19 @@ export const generateExecutiveFinancePdf = (data: FinancePdfData) => {
     { label: '(-) Harga Pokok Penjualan (HPP BOM)', desc: 'Biaya bahan baku ayam, saus mentai, nori, keju, kemasan', amount: `-${formatRupiah(data.totalHpp)}`, type: 'sub' },
     { label: '(=) LABA KOTOR (GROSS PROFIT)', desc: `Margin Kotor: ${data.grossMarginPercent}% dari penjualan bersih`, amount: formatRupiah(data.grossProfit), type: 'highlight-green' },
     { label: '(-) Beban Pengeluaran Operasional', desc: 'Gas LPG, listrik, sewa tempat, gaji, operasional harian', amount: `-${formatRupiah(data.totalOperatingExpenses)}`, type: 'sub' },
-    { label: '(=) LABA BERSIH OPERASIONAL (NET PROFIT)', desc: `Net Margin: ${data.netMarginPercent}% keuntungan bersih toko`, amount: formatRupiah(data.netProfit), type: 'highlight-blue' },
+    {
+      label: '(=) LABA BERSIH OPERASIONAL (NET PROFIT)',
+      desc: `Net Margin: ${data.netMarginPercent}% ${data.netProfit >= 0 ? 'keuntungan bersih toko' : 'defisit / rugi operasional'}`,
+      amount: formatRupiah(data.netProfit),
+      type: data.netProfit >= 0 ? 'highlight-green' : 'highlight-red'
+    },
   ];
 
   doc.setFontSize(7.5);
   plRows.forEach((row, i) => {
     const isEven = i % 2 === 1;
-    if (row.type === 'highlight-blue') {
-      doc.setFillColor(239, 246, 255);
+    if (row.type === 'highlight-red') {
+      doc.setFillColor(254, 242, 242);
       doc.rect(14, tableY, 182, 7, 'F');
     } else if (row.type === 'highlight-green') {
       doc.setFillColor(236, 253, 245);
@@ -171,9 +192,12 @@ export const generateExecutiveFinancePdf = (data: FinancePdfData) => {
     doc.setDrawColor(226, 232, 240);
     doc.line(14, tableY + 6.5, 196, tableY + 6.5);
 
-    if (row.type.startsWith('highlight')) {
+    if (row.type === 'highlight-green') {
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(row.type === 'highlight-green' ? 4 : 29, row.type === 'highlight-green' ? 120 : 78, row.type === 'highlight-green' ? 87 : 216);
+      doc.setTextColor(4, 120, 87);
+    } else if (row.type === 'highlight-red') {
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(190, 18, 60);
     } else if (row.type === 'bold') {
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(15, 23, 42);
@@ -192,9 +216,7 @@ export const generateExecutiveFinancePdf = (data: FinancePdfData) => {
     doc.setFontSize(8);
     if (row.type === 'highlight-green') {
       doc.setTextColor(5, 150, 105);
-    } else if (row.type === 'highlight-blue') {
-      doc.setTextColor(37, 99, 235);
-    } else if (row.type === 'sub') {
+    } else if (row.type === 'highlight-red' || row.type === 'sub') {
       doc.setTextColor(225, 29, 72);
     } else {
       doc.setTextColor(15, 23, 42);

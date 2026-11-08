@@ -3,7 +3,7 @@ import { Material, MenuItem, PurchaseOrder, Expense, Transaction, ERPConfig, Use
 export const INITIAL_CONFIG: ERPConfig = {
   storeName: 'DIMSUM MENTAI 77 UNPAM',
   storeTagline: 'Outlet Dimsum Mentai 77 UNPAM (Universitas Pamulang)',
-  storeAddress: 'Jl. Pamulang Permai 1 No.Samping, Gapura, Kec. Pamulang, Kota Tangerang Selatan, Banten 15417',
+  storeAddress: 'Jl. Pamulang Permai 1 No.Samping Gapura, Kec. Pamulang, Kota Tangerang Selatan, Banten 15417',
   storePhone: '0819-9645-1323',
   cashierName: 'Kasir Shift 1 (Rian)',
   googleWebAppUrl: '',

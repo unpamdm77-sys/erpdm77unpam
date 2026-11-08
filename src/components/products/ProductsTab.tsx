@@ -19,6 +19,7 @@ import {
   Lock,
   AlertCircle
 } from 'lucide-react';
+import { DecimalInput } from '../common/DecimalInput';
 
 export const ProductsTab: React.FC = () => {
   const {
@@ -576,16 +577,15 @@ export const ProductsTab: React.FC = () => {
                             </option>
                           ))}
                         </select>
-                        <div className="flex items-center gap-1 w-24">
-                          <input
-                            type="number"
-                            min="0.1"
-                            step="any"
+                        <div className="w-28">
+                          <DecimalInput
                             value={ing.qty}
-                            onChange={e => handleUpdateRecipeIngredient(idx, ing.materialId, Number(e.target.value))}
+                            onChange={val => handleUpdateRecipeIngredient(idx, ing.materialId, val)}
+                            unit={mat?.unit}
+                            min={0.01}
+                            placeholder="0.1"
                             className="w-full text-xs font-bold px-2 py-1.5 rounded-lg border border-slate-300 bg-white"
                           />
-                          <span className="text-[11px] text-slate-500">{mat?.unit}</span>
                         </div>
                         <span className="w-20 text-right text-[11px] font-semibold text-slate-700">
                           {formatRupiah(cost)}
