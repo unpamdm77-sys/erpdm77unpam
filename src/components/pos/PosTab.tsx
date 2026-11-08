@@ -620,53 +620,42 @@ export const PosTab: React.FC = () => {
 
         {/* Discount & Totals Section */}
         <div className="pt-2 border-t border-slate-100 space-y-2 shrink-0">
-          {/* Quick discounts */}
+          {/* Manual Discount Input */}
           <div>
             <div className="flex justify-between items-center text-[11px] text-slate-500 mb-1">
-              <span className="font-semibold flex items-center gap-1">
-                <Percent size={12} /> Diskon Pesanan
+              <span className="font-semibold flex items-center gap-1 text-slate-700">
+                <Percent size={12} className="text-red-600" /> Diskon Pesanan (Manual)
               </span>
               {discount > 0 && (
-                <button onClick={() => setDiscount(0)} className="text-rose-600 font-bold hover:underline">
-                  Hapus Diskon
+                <button
+                  type="button"
+                  onClick={() => setDiscount(0)}
+                  className="text-rose-600 text-[10px] font-bold hover:underline"
+                >
+                  Reset Diskon
                 </button>
               )}
             </div>
-            <div className="flex gap-1.5">
-              <button
-                onClick={() => setDiscount(0)}
-                className={`flex-1 py-1 text-[10px] font-bold rounded-lg border ${
-                  discount === 0 ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-50 border-slate-200 text-slate-600'
-                }`}
-              >
-                0%
-              </button>
-              <button
-                onClick={() => setDiscount(5000)}
-                className={`flex-1 py-1 text-[10px] font-bold rounded-lg border ${
-                  discount === 5000 ? 'bg-red-600 text-white border-red-600' : 'bg-slate-50 border-slate-200 text-slate-600'
-                }`}
-              >
-                5rb
-              </button>
-              <button
-                onClick={() => setDiscount(10000)}
-                className={`flex-1 py-1 text-[10px] font-bold rounded-lg border ${
-                  discount === 10000 ? 'bg-red-600 text-white border-red-600' : 'bg-slate-50 border-slate-200 text-slate-600'
-                }`}
-              >
-                10rb
-              </button>
-              <button
-                onClick={() => setDiscount(Math.round(cartSubtotal * 0.1))}
-                className={`flex-1 py-1 text-[10px] font-bold rounded-lg border ${
-                  discount === Math.round(cartSubtotal * 0.1) && discount > 0
-                    ? 'bg-red-600 text-white border-red-600'
-                    : 'bg-slate-50 border-slate-200 text-slate-600'
-                }`}
-              >
-                UNPAM 10%
-              </button>
+            <div className="relative flex items-center">
+              <span className="absolute left-2.5 text-xs font-bold text-slate-400">Rp</span>
+              <input
+                type="number"
+                min="0"
+                max={cartSubtotal}
+                step="500"
+                placeholder="Ketik nominal diskon manual..."
+                value={discount === 0 ? '' : discount}
+                onChange={e => {
+                  const val = e.target.value === '' ? 0 : Math.max(0, Number(e.target.value));
+                  setDiscount(Math.min(cartSubtotal, val));
+                }}
+                className="w-full pl-8 pr-16 py-1.5 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-red-500 transition text-slate-800"
+              />
+              {discount > 0 && cartSubtotal > 0 && (
+                <span className="absolute right-2 text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
+                  {Math.round((discount / cartSubtotal) * 100)}%
+                </span>
+              )}
             </div>
           </div>
 

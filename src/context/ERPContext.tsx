@@ -27,7 +27,8 @@ import {
   INITIAL_USERS,
   DEFAULT_SALES_TARGET,
   DEFAULT_MENU_CATEGORIES,
-  DEFAULT_MATERIAL_CATEGORIES
+  DEFAULT_MATERIAL_CATEGORIES,
+  DEFAULT_PAYMENT_METHODS
 } from '../data/initialData';
 import { posSound } from '../utils/formatters';
 import { User as FirebaseUser } from 'firebase/auth';
@@ -120,6 +121,12 @@ interface ERPContextType {
   addMaterialCategory: (cat: string) => void;
   updateMaterialCategory: (oldCat: string, newCat: string) => void;
   deleteMaterialCategory: (cat: string) => void;
+
+  // Dynamic Payment Methods (Customizable, Add, Edit, Delete)
+  paymentMethods: string[];
+  addPaymentMethod: (method: string) => void;
+  updatePaymentMethod: (oldMethod: string, newMethod: string) => void;
+  deletePaymentMethod: (method: string) => void;
   
   // Setters
   setCustomerName: (name: string) => void;
@@ -233,6 +240,7 @@ const STORAGE_KEYS = {
   SALES_TARGETS: 'dimsum77_targets_v1',
   MENU_CATS: 'dimsum77_menu_cats_v1',
   MATERIAL_CATS: 'dimsum77_material_cats_v1',
+  PAYMENT_METHODS: 'dimsum77_payment_methods_v1',
   IS_AUTHENTICATED: 'dimsum77_auth_state_v1',
   GOOGLE_SHEET_ID: 'dimsum77_google_sheet_id_v1',
   GOOGLE_SHEET_URL: 'dimsum77_google_sheet_url_v1',
@@ -321,6 +329,11 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : DEFAULT_MATERIAL_CATEGORIES;
   });
 
+  const [paymentMethods, setPaymentMethods] = useState<string[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.PAYMENT_METHODS);
+    return saved ? JSON.parse(saved) : DEFAULT_PAYMENT_METHODS;
+  });
+
   const [config, setConfig] = useState<ERPConfig>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.CONFIG);
     if (!saved) return INITIAL_CONFIG;
@@ -329,7 +342,8 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (
         !parsed.storeAddress ||
         parsed.storeAddress.includes('Viktor') ||
-        parsed.storeAddress.includes('Surya Kencana')
+        parsed.storeAddress.includes('Surya Kencana') ||
+        parsed.storeAddress.includes('No.Samping')
       ) {
         parsed.storeAddress = INITIAL_CONFIG.storeAddress;
       }
@@ -406,6 +420,10 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.MATERIAL_CATS, JSON.stringify(materialCategories));
   }, [materialCategories]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.PAYMENT_METHODS, JSON.stringify(paymentMethods));
+  }, [paymentMethods]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.PARKED, JSON.stringify(parkedOrders));
@@ -780,6 +798,9 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (data.materialCategories && Array.isArray(data.materialCategories)) {
           setMaterialCategories(data.materialCategories);
         }
+        if (data.paymentMethods && Array.isArray(data.paymentMethods)) {
+          setPaymentMethods(data.paymentMethods);
+        }
         if (data.salesTargets) {
           setSalesTargets(data.salesTargets);
         }
@@ -787,6 +808,7 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         saveSettingsToFirestore({
           menuCategories: DEFAULT_MENU_CATEGORIES,
           materialCategories: DEFAULT_MATERIAL_CATEGORIES,
+          paymentMethods: DEFAULT_PAYMENT_METHODS,
           salesTargets: DEFAULT_SALES_TARGET
         });
       }
@@ -818,6 +840,35 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       unsubUsers();
       unsubSettings();
     };
+  }, []);
+
+  // One-time automatic purge of legacy demo input data from Firestore & local storage
+  useEffect(() => {
+    const isPurged = localStorage.getItem('dimsum77_demo_purged_v4');
+    if (!isPurged) {
+      const demoMatIds = Array.from({ length: 30 }, (_, i) => `mat-${i + 1}`);
+      demoMatIds.forEach(id => deleteMaterialFromFirestore(id));
+
+      const demoMenuIds = Array.from({ length: 30 }, (_, i) => `menu-${i + 1}`);
+      demoMenuIds.forEach(id => deleteMenuItemFromFirestore(id));
+
+      const demoTrxIds = Array.from({ length: 30 }, (_, i) => `trx-${i + 1}`);
+      demoTrxIds.forEach(id => deleteTransactionFromFirestore(id));
+
+      const demoPoIds = Array.from({ length: 30 }, (_, i) => `po-${i + 1}`);
+      demoPoIds.forEach(id => deletePurchaseFromFirestore(id));
+
+      const demoExpIds = Array.from({ length: 30 }, (_, i) => `exp-${i + 1}`);
+      demoExpIds.forEach(id => deleteExpenseFromFirestore(id));
+
+      setMaterials(prev => prev.filter(m => !demoMatIds.includes(m.id)));
+      setMenuItems(prev => prev.filter(m => !demoMenuIds.includes(m.id)));
+      setTransactions(prev => prev.filter(t => !demoTrxIds.includes(t.id)));
+      setPurchases(prev => prev.filter(p => !demoPoIds.includes(p.id)));
+      setExpenses(prev => prev.filter(e => !demoExpIds.includes(e.id)));
+
+      localStorage.setItem('dimsum77_demo_purged_v4', 'true');
+    }
   }, []);
 
   // Google Workspace Auth Listener on Mount
@@ -1937,6 +1988,36 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
+  // Dynamic Payment Methods (Customizable, Add, Edit, Delete)
+  const addPaymentMethod = (method: string) => {
+    const clean = method.trim().toUpperCase();
+    if (!clean || paymentMethods.includes(clean)) return;
+    setPaymentMethods(prev => {
+      const updated = [...prev, clean];
+      saveSettingsToFirestore({ paymentMethods: updated });
+      return updated;
+    });
+  };
+
+  const updatePaymentMethod = (oldMethod: string, newMethod: string) => {
+    const clean = newMethod.trim().toUpperCase();
+    if (!clean || oldMethod === clean) return;
+    setPaymentMethods(prev => {
+      const updated = prev.map(m => (m === oldMethod ? clean : m));
+      saveSettingsToFirestore({ paymentMethods: updated });
+      return updated;
+    });
+  };
+
+  const deletePaymentMethod = (method: string) => {
+    if (paymentMethods.length <= 1) return;
+    setPaymentMethods(prev => {
+      const updated = prev.filter(m => m !== method);
+      saveSettingsToFirestore({ paymentMethods: updated });
+      return updated;
+    });
+  };
+
   const pushAllToFirestore = async (): Promise<{ success: boolean; message: string }> => {
     return await seedAllToFirestore({
       materials,
@@ -2076,6 +2157,10 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addMaterialCategory,
         updateMaterialCategory,
         deleteMaterialCategory,
+        paymentMethods,
+        addPaymentMethod,
+        updatePaymentMethod,
+        deletePaymentMethod,
         setCustomerName,
         setOrderType,
         setTableNo,

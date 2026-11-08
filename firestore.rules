@@ -31,8 +31,7 @@ service cloud.firestore {
     // POS Transactions (Penjualan)
     match /transactions/{transactionId} {
       allow read: if true;
-      allow create, update: if isSignedIn() || request.time < timestamp.date(2027, 1, 1);
-      allow delete: if isSignedIn();
+      allow write: if isSignedIn() || request.time < timestamp.date(2027, 1, 1);
     }
 
     // Purchasing PO

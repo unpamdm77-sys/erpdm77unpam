@@ -37,7 +37,7 @@ export interface CartItem {
   calculatedHpp: number; // Calculated at time of sale
 }
 
-export type PaymentMethod = 'TUNAI' | 'QRIS' | 'TRANSFER' | 'DEBIT';
+export type PaymentMethod = string;
 
 export interface TransactionItem {
   id: string;

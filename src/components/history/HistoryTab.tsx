@@ -27,7 +27,6 @@ export const HistoryTab: React.FC = () => {
     transactions,
     refundTransaction,
     deleteTransaction,
-    clearAllTransactions,
     verifySupervisorOrOwnerPin,
     config,
     currentUser,
@@ -42,7 +41,6 @@ export const HistoryTab: React.FC = () => {
 
   // Owner/SPV Authorization Modal for Order Deletion
   const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
-  const [showClearAllModal, setShowClearAllModal] = useState(false);
   const [ownerPasswordInput, setOwnerPasswordInput] = useState('');
   const [deleteReason, setDeleteReason] = useState('Salah input kasir / pelanggan batalkan pesanan');
   const [restoreStockOnDelete, setRestoreStockOnDelete] = useState(true);
@@ -126,28 +124,6 @@ export const HistoryTab: React.FC = () => {
     setTimeout(() => setDeleteSuccessToast(''), 4500);
   };
 
-  const handleConfirmClearAllHistory = (e: React.FormEvent) => {
-    e.preventDefault();
-    setDeleteAuthError('');
-
-    if (!ownerPasswordInput.trim()) {
-      setDeleteAuthError('Kata sandi / PIN Owner atau Supervisor wajib diisi untuk otorisasi!');
-      return;
-    }
-
-    if (!isAuthorizedOwnerOrSpv(ownerPasswordInput)) {
-      setDeleteAuthError('Otorisasi Ditolak: Kata sandi / PIN Owner atau Supervisor tidak sesuai!');
-      return;
-    }
-
-    clearAllTransactions();
-    setShowClearAllModal(false);
-    setOwnerPasswordInput('');
-    setDeleteAuthError('');
-    setDeleteSuccessToast('Seluruh riwayat transaksi kasir berhasil dihapus sampai 0 (data riwayat telah bersih).');
-    setTimeout(() => setDeleteSuccessToast(''), 5000);
-  };
-
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* Success Toast */}
@@ -211,33 +187,15 @@ export const HistoryTab: React.FC = () => {
             ))}
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <div className="relative flex-1 sm:w-72">
-              <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
-              <input
-                type="text"
-                placeholder="Cari no nota, customer, menu..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-1 focus:ring-red-500"
-              />
-            </div>
-            {transactions.length > 0 && (
-              <button
-                type="button"
-                onClick={() => {
-                  setShowClearAllModal(true);
-                  setOwnerPasswordInput('');
-                  setDeleteAuthError('');
-                }}
-                className="flex items-center space-x-1.5 px-3 py-2 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition border border-red-200 shrink-0 cursor-pointer"
-                title="Hapus seluruh riwayat transaksi kasir sampai 0"
-              >
-                <Trash2 size={14} />
-                <span className="hidden sm:inline">Hapus Semua (0)</span>
-                <span className="sm:hidden">Reset (0)</span>
-              </button>
-            )}
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
+            <input
+              type="text"
+              placeholder="Cari no nota, customer, menu..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-1 focus:ring-red-500"
+            />
           </div>
         </div>
 
@@ -577,85 +535,6 @@ export const HistoryTab: React.FC = () => {
                 >
                   <Trash2 size={14} />
                   <span>Setujui & Hapus</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* CLEAR ALL TRANSACTIONS MODAL */}
-      {showClearAllModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-red-200 animate-in zoom-in-95 duration-150">
-            <div className="bg-red-700 text-white p-5 flex items-center justify-between">
-              <div className="flex items-center space-x-2.5">
-                <div className="p-2 bg-white/20 rounded-xl">
-                  <ShieldAlert size={20} className="text-white" />
-                </div>
-                <div>
-                  <h3 className="font-black text-sm tracking-wide">Hapus Seluruh Riwayat (Kosongkan Sampai 0)</h3>
-                  <p className="text-[11px] text-red-100">Tindakan Permanen - Data Riwayat Jadi 0</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowClearAllModal(false)}
-                className="text-white/80 hover:text-white p-1 rounded-lg"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleConfirmClearAllHistory} className="p-5 space-y-4 text-xs">
-              <div className="p-3.5 bg-red-50 border border-red-200 rounded-2xl text-slate-700 space-y-1.5">
-                <p className="font-bold text-red-700">Peringatan Penghapusan Bersih:</p>
-                <p className="text-[11px]">
-                  Semua transaksi penjualan ({transactions.length} transaksi) akan dihapus secara permanen.
-                  Data tidak akan kembali ke data demo dan akan tetap 0.
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-800 mb-1">
-                  Kata Sandi / PIN Owner atau Supervisor <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <KeyRound size={15} className="absolute left-3.5 top-3 text-slate-400" />
-                  <input
-                    type="password"
-                    autoFocus
-                    required
-                    placeholder="Masukkan sandi atau PIN Owner / SPV..."
-                    value={ownerPasswordInput}
-                    onChange={e => {
-                      setOwnerPasswordInput(e.target.value);
-                      if (deleteAuthError) setDeleteAuthError('');
-                    }}
-                    className="w-full pl-10 pr-3.5 py-2.5 text-xs rounded-xl bg-slate-50 border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500 font-mono"
-                  />
-                </div>
-                {deleteAuthError && (
-                  <p className="text-[11px] font-bold text-red-600 mt-1.5 flex items-center space-x-1">
-                    <ShieldAlert size={12} className="shrink-0" />
-                    <span>{deleteAuthError}</span>
-                  </p>
-                )}
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowClearAllModal(false)}
-                  className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold hover:bg-slate-100 transition cursor-pointer"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-2.5 rounded-xl bg-red-700 hover:bg-red-800 text-white font-black transition shadow-md shadow-red-700/20 flex items-center justify-center space-x-1.5 cursor-pointer"
-                >
-                  <Trash2 size={14} />
-                  <span>Ya, Hapus Semua Sampai 0</span>
                 </button>
               </div>
             </form>

@@ -36,7 +36,7 @@ export const generateExecutiveFinancePdf = (data: FinancePdfData) => {
   doc.setFont('helvetica', 'normal');
   doc.text('Laporan Keuangan Eksekutif & Laba Rugi (Profit & Loss Statement)', 20, 28);
   doc.setFontSize(8);
-  doc.text('Jl. Pamulang Permai 1 No.Samping Gapura, Kec. Pamulang, Tangsel • WA: 0819-9645-1323', 20, 33);
+  doc.text('Jl. Pamulang Permai 1, Samping Gapura, Kec. Pamulang, Tangsel • WA: 0819-9645-1323', 20, 33);
 
   // 2. DOCUMENT TITLE & PERIODE INFO BOX
   doc.setTextColor(15, 23, 42); // Slate-900
