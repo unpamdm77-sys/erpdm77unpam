@@ -22,13 +22,21 @@ export interface MenuItem {
   id: string;
   code: string;
   name: string;
-  category: string;
+  category: string; // Kategori utama (backward-compatible)
+  categories?: string[]; // Daftar multi-kategori (satu menu bisa banyak kategori)
   price: number;
   description: string;
   recipe: RecipeIngredient[];
   image?: string;
   isAvailable: boolean;
 }
+
+export const getMenuItemCategories = (item: { category?: string; categories?: string[] }): string[] => {
+  if (Array.isArray(item.categories) && item.categories.length > 0) {
+    return item.categories.filter(Boolean);
+  }
+  return item.category ? [item.category] : [];
+};
 
 export interface CartItem {
   menuItem: MenuItem;

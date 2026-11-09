@@ -3,6 +3,7 @@ import { useERP } from '../../context/ERPContext';
 import { MenuItem, RecipeIngredient } from '../../types/erp';
 import { formatRupiah } from '../../utils/formatters';
 import { CategoryManagerModal } from '../categories/CategoryManagerModal';
+import { HorizontalScrollPills } from '../common/HorizontalScrollPills';
 import {
   Utensils,
   Plus,
@@ -48,7 +49,9 @@ export const ProductsTab: React.FC = () => {
   // Form states
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
-  const [category, setCategory] = useState<string>(menuCategories[0] || 'Dimsum Mentai');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(
+    menuCategories.length > 0 ? [menuCategories[0]] : ['Dimsum Mentai']
+  );
   const [price, setPrice] = useState<number | ''>('');
   const [description, setDescription] = useState('');
   const [image, setImage] = useState<string>('');
@@ -103,12 +106,23 @@ export const ProductsTab: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
+  const toggleCategorySelection = (cat: string) => {
+    setSelectedCategories(prev => {
+      if (prev.includes(cat)) {
+        if (prev.length <= 1) return prev; // Minimal harus ada 1 kategori terpilih
+        return prev.filter(c => c !== cat);
+      } else {
+        return [...prev, cat];
+      }
+    });
+  };
+
   const handleOpenAdd = () => {
     if (!canEditMenu) return;
     setEditingItem(null);
     setCode(`DM-${(menuItems.length + 1).toString().padStart(2, '0')}`);
     setName('');
-    setCategory(menuCategories[0] || 'Dimsum Mentai');
+    setSelectedCategories(menuCategories.length > 0 ? [menuCategories[0]] : ['Dimsum Mentai']);
     setPrice('');
     setDescription('');
     setImage('');
@@ -122,7 +136,8 @@ export const ProductsTab: React.FC = () => {
     setEditingItem(item);
     setCode(item.code);
     setName(item.name);
-    setCategory(item.category);
+    const itemCats = (item.categories && item.categories.length > 0) ? item.categories : (item.category ? [item.category] : []);
+    setSelectedCategories(itemCats.length > 0 ? itemCats : [menuCategories[0] || 'Dimsum Mentai']);
     setPrice(item.price);
     setDescription(item.description);
     setImage(item.image || '');
@@ -156,11 +171,15 @@ export const ProductsTab: React.FC = () => {
     e.preventDefault();
     if (!name || !price) return;
 
+    const finalCategories = selectedCategories.length > 0 ? selectedCategories : (menuCategories.length > 0 ? [menuCategories[0]] : ['Umum']);
+    const primaryCategory = finalCategories[0];
+
     if (editingItem) {
       updateMenuItem(editingItem.id, {
         code,
         name,
-        category,
+        category: primaryCategory,
+        categories: finalCategories,
         price: Number(price),
         description,
         image: image.trim() ? image : undefined,
@@ -170,7 +189,8 @@ export const ProductsTab: React.FC = () => {
       addMenuItem({
         code,
         name,
-        category,
+        category: primaryCategory,
+        categories: finalCategories,
         price: Number(price),
         description,
         image: image.trim() ? image : undefined,
@@ -185,7 +205,8 @@ export const ProductsTab: React.FC = () => {
     const matchesSearch =
       item.name.toLowerCase().includes(search.toLowerCase()) ||
       item.code.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = selectedCategory === 'Semua' || item.category === selectedCategory;
+    const itemCats = (item.categories && item.categories.length > 0) ? item.categories : (item.category ? [item.category] : []);
+    const matchesCategory = selectedCategory === 'Semua' || itemCats.includes(selectedCategory);
     return matchesSearch && matchesCategory;
   });
 
@@ -245,20 +266,12 @@ export const ProductsTab: React.FC = () => {
 
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
-        <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1">
-          {['Semua', ...menuCategories].map(cat => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
-                selectedCategory === cat
-                  ? 'bg-red-600 text-white shadow-xs'
-                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
+        <div className="w-full sm:flex-1 min-w-0">
+          <HorizontalScrollPills
+            categories={['Semua', ...menuCategories]}
+            selectedCategory={selectedCategory}
+            onSelectCategory={setSelectedCategory}
+          />
         </div>
 
         <div className="relative w-full sm:w-64">
@@ -302,10 +315,15 @@ export const ProductsTab: React.FC = () => {
                   )}
 
                   <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold text-red-800 bg-red-50 border border-red-200 px-2 py-0.5 rounded-md">
-                        {item.category}
-                      </span>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {((item.categories && item.categories.length > 0) ? item.categories : [item.category]).map(c => (
+                        <span
+                          key={c}
+                          className="text-[10px] font-bold text-red-800 bg-red-50 border border-red-200 px-2 py-0.5 rounded-md"
+                        >
+                          {c}
+                        </span>
+                      ))}
                       <span className="font-mono text-[10px] text-slate-400 font-semibold">{item.code}</span>
                     </div>
                     <h3 className="font-extrabold text-base text-slate-900 mt-1">{item.name}</h3>
@@ -430,33 +448,64 @@ export const ProductsTab: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Kategori</label>
-                  <select
-                    value={category}
-                    onChange={e => setCategory(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-medium bg-white"
-                  >
-                    {menuCategories.map(cat => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
+              {/* Multi-Category Selector Section */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px]">
+                    Kategori Menu (Bisa Pilih Lebih Dari Satu)
+                  </label>
+                  <span className="text-[11px] font-extrabold text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-lg">
+                    {selectedCategories.length} Kategori Terpilih
+                  </span>
                 </div>
-                <div>
-                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Harga Jual (Rp)</label>
-                  <input
-                    type="number"
-                    required
-                    min="1"
-                    value={price}
-                    onChange={e => setPrice(e.target.value === '' ? '' : Number(e.target.value))}
-                    placeholder="Contoh: 20000"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-black text-amber-700"
-                  />
+
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                  <p className="text-[10px] text-slate-500 font-medium">
+                    Klik kategori di bawah untuk menyematkan menu ini ke dalam 1 atau beberapa kategori sekaligus:
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {menuCategories.map(cat => {
+                      const isSelected = selectedCategories.includes(cat);
+                      return (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => toggleCategorySelection(cat)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer ${
+                            isSelected
+                              ? 'bg-red-600 text-white shadow-xs border border-red-600'
+                              : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-300'
+                          }`}
+                        >
+                          {isSelected ? (
+                            <Check size={13} className="shrink-0 stroke-[2.5]" />
+                          ) : (
+                            <Plus size={13} className="text-slate-400 shrink-0" />
+                          )}
+                          <span>{cat}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {selectedCategories.length === 1 && (
+                    <p className="text-[10px] text-slate-400 italic">
+                      Tips: Klik kategori lain jika menu ini juga ingin tampil di kategori tambahan (misal: Best Seller & Promo UNPAM).
+                    </p>
+                  )}
                 </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Harga Jual (Rp)</label>
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  value={price}
+                  onChange={e => setPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                  placeholder="Contoh: 20000"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 font-black text-amber-700"
+                />
               </div>
 
               <div>

@@ -1941,7 +1941,19 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return updated;
     });
     // Also update any menu items using this category
-    setMenuItems(prev => prev.map(m => (m.category === oldCat ? { ...m, category: trimmed } : m)));
+    setMenuItems(prev =>
+      prev.map(m => {
+        const currentCats = m.categories && m.categories.length > 0 ? m.categories : [m.category];
+        const hasOld = currentCats.includes(oldCat) || m.category === oldCat;
+        if (!hasOld) return m;
+
+        const newCats = currentCats.map(c => (c === oldCat ? trimmed : c));
+        const newPrimary = m.category === oldCat ? trimmed : m.category;
+        const updated = { ...m, category: newPrimary, categories: newCats };
+        saveMenuItemToFirestore(updated);
+        return updated;
+      })
+    );
   };
 
   const deleteMenuCategory = (cat: string) => {
@@ -1949,11 +1961,29 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       alert('Minimal harus ada 1 kategori menu.');
       return;
     }
+    const remaining = menuCategories.filter(c => c !== cat);
+    const fallbackCat = remaining[0] || 'Umum';
+
     setMenuCategories(prev => {
       const updated = prev.filter(c => c !== cat);
       saveSettingsToFirestore({ menuCategories: updated });
       return updated;
     });
+
+    setMenuItems(prev =>
+      prev.map(m => {
+        const currentCats = m.categories && m.categories.length > 0 ? m.categories : [m.category];
+        const hasTarget = currentCats.includes(cat) || m.category === cat;
+        if (!hasTarget) return m;
+
+        const filtered = currentCats.filter(c => c !== cat);
+        const newCats = filtered.length > 0 ? filtered : [fallbackCat];
+        const newPrimary = m.category === cat ? newCats[0] : m.category;
+        const updated = { ...m, category: newPrimary, categories: newCats };
+        saveMenuItemToFirestore(updated);
+        return updated;
+      })
+    );
   };
 
   const reorderMenuCategories = (newOrder: string[]) => {

@@ -27,6 +27,7 @@
         "code": { "type": "string" },
         "name": { "type": "string" },
         "category": { "type": "string" },
+        "categories": { "type": "array" },
         "price": { "type": "number" },
         "description": { "type": "string" },
         "isAvailable": { "type": "boolean" },

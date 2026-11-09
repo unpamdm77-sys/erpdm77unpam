@@ -77,8 +77,7 @@ export function exportCompleteExcelWorkbook(
   // 5. Menu Dimsum
   const menuRows = menuItems.map(m => ({
     'Kode Menu': m.code,
-    'Nama Menu': m.name,
-    'Kategori': m.category,
+    'Kategori': (m.categories && m.categories.length > 0) ? m.categories.join(', ') : m.category,
     'Harga Jual': m.price,
     'Jumlah Bahan BOM': m.recipe.length,
     'Status Aktif': m.isAvailable ? 'Ya' : 'Tidak',

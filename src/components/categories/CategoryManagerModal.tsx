@@ -143,7 +143,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
   const handleDelete = (cat: string) => {
     const isMenu = activeSubTab === 'menu';
     const usedCount = isMenu
-      ? menuItems.filter(m => m.category === cat).length
+      ? menuItems.filter(m => ((m.categories && m.categories.length > 0) ? m.categories.includes(cat) : m.category === cat)).length
       : materials.filter(m => m.category === cat).length;
 
     if (usedCount > 0) {
@@ -286,7 +286,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
                 const isEditing = editingCatName === cat;
                 const usedCount =
                   activeSubTab === 'menu'
-                    ? menuItems.filter(m => m.category === cat).length
+                    ? menuItems.filter(m => ((m.categories && m.categories.length > 0) ? m.categories.includes(cat) : m.category === cat)).length
                     : materials.filter(m => m.category === cat).length;
 
                 return (

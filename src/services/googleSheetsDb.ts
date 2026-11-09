@@ -623,7 +623,7 @@ export const pushEntireDatabaseToSheets = async (
   ]);
 
   const menuRows = data.menuItems.map(m => [
-    m.id, m.code, m.name, m.category, m.price, JSON.stringify(m.recipe), m.isAvailable ? 'TRUE' : 'FALSE', m.description
+    m.id, m.code, m.name, (m.categories && m.categories.length > 0) ? m.categories.join(', ') : m.category, m.price, JSON.stringify(m.recipe), m.isAvailable ? 'TRUE' : 'FALSE', m.description
   ]);
 
   const poRows = data.purchases.map(p => [

@@ -31,6 +31,7 @@ import {
   SlidersHorizontal
 } from 'lucide-react';
 import { CategoryManagerModal } from '../categories/CategoryManagerModal';
+import { HorizontalScrollPills } from '../common/HorizontalScrollPills';
 
 const PEDAS_OPTIONS = ['Normal', 'Pedas Sedang', 'Extra Pedas'];
 const TORCH_OPTIONS = ['Normal Melt', 'Extra Gosong Wangi', 'Tanpa Torch (Dingin)'];
@@ -130,7 +131,8 @@ export const PosTab: React.FC = () => {
     const matchesSearch =
       item.name.toLowerCase().includes(search.toLowerCase()) ||
       item.code.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = selectedCategory === 'Semua' || item.category === selectedCategory;
+    const itemCats = (item.categories && item.categories.length > 0) ? item.categories : (item.category ? [item.category] : []);
+    const matchesCategory = selectedCategory === 'Semua' || itemCats.includes(selectedCategory);
     return matchesSearch && matchesCategory;
   });
 
@@ -244,30 +246,24 @@ export const PosTab: React.FC = () => {
           </div>
         </div>
 
-        {/* Category Pills */}
-        <div className="flex items-center space-x-2 py-2.5 overflow-x-auto no-scrollbar shrink-0">
-          {['Semua', ...menuCategories].map(cat => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer ${
-                selectedCategory === cat
-                  ? 'bg-red-600 text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-          <button
-            type="button"
-            onClick={() => setShowCategoryModal(true)}
-            className="px-2.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 transition flex items-center space-x-1 shrink-0 cursor-pointer border border-slate-200/60"
-            title="Kelola & Geser Urutan Kategori Menu"
-          >
-            <SlidersHorizontal size={13} className="text-amber-600" />
-            <span>Atur & Geser Urutan</span>
-          </button>
+        {/* Category Pills (Geser & Slide Horizontal dengan Navigasi Panah dan Drag) */}
+        <div className="py-1 shrink-0 w-full min-w-0">
+          <HorizontalScrollPills
+            categories={['Semua', ...menuCategories]}
+            selectedCategory={selectedCategory}
+            onSelectCategory={setSelectedCategory}
+            extraAction={
+              <button
+                type="button"
+                onClick={() => setShowCategoryModal(true)}
+                className="px-2.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 transition flex items-center space-x-1 shrink-0 cursor-pointer border border-slate-200/60"
+                title="Kelola & Geser Urutan Kategori Menu"
+              >
+                <SlidersHorizontal size={13} className="text-amber-600" />
+                <span>Atur & Geser Urutan</span>
+              </button>
+            }
+          />
         </div>
 
         {/* Menu Grid */}
@@ -300,9 +296,16 @@ export const PosTab: React.FC = () => {
                           (e.currentTarget as HTMLElement).style.display = 'none';
                         }}
                       />
-                      <span className="absolute top-1.5 left-1.5 text-[9px] font-bold text-red-900 bg-white/95 backdrop-blur-xs px-2 py-0.5 rounded-md shadow-xs border border-red-100">
-                        {item.category}
-                      </span>
+                      <div className="absolute top-1.5 left-1.5 flex flex-wrap gap-1 max-w-[70%] z-10 pointer-events-none">
+                        {((item.categories && item.categories.length > 0) ? item.categories : [item.category]).map(c => (
+                          <span
+                            key={c}
+                            className="text-[9px] font-bold text-red-900 bg-white/95 backdrop-blur-xs px-2 py-0.5 rounded-md shadow-xs border border-red-100 truncate"
+                          >
+                            {c}
+                          </span>
+                        ))}
+                      </div>
                       <span className="absolute top-1.5 right-1.5 text-[9px] font-mono font-bold text-slate-700 bg-white/90 px-1.5 py-0.5 rounded shadow-xs">
                         {item.code}
                       </span>
@@ -310,9 +313,16 @@ export const PosTab: React.FC = () => {
                   ) : (
                     <div className="relative w-full h-16 mb-2.5 overflow-hidden rounded-xl bg-slate-100 flex items-center justify-center border border-slate-200">
                       <Utensils size={22} className="text-slate-400 stroke-[1.5]" />
-                      <span className="absolute top-1.5 left-1.5 text-[9px] font-bold text-slate-800 bg-white px-2 py-0.5 rounded-md shadow-xs border border-slate-200">
-                        {item.category}
-                      </span>
+                      <div className="absolute top-1.5 left-1.5 flex flex-wrap gap-1 max-w-[70%] z-10 pointer-events-none">
+                        {((item.categories && item.categories.length > 0) ? item.categories : [item.category]).map(c => (
+                          <span
+                            key={c}
+                            className="text-[9px] font-bold text-slate-800 bg-white px-2 py-0.5 rounded-md shadow-xs border border-slate-200 truncate"
+                          >
+                            {c}
+                          </span>
+                        ))}
+                      </div>
                       <span className="absolute top-1.5 right-1.5 text-[9px] font-mono text-slate-400 bg-white/90 px-1.5 py-0.5 rounded">
                         {item.code}
                       </span>
