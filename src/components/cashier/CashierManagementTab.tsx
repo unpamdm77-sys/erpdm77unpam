@@ -18,22 +18,28 @@ import {
   Search,
   Wallet,
   Clock,
-  Coins
+  Coins,
+  Smartphone,
+  Plus
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
+import { PaymentMethodModal } from '../settings/PaymentMethodModal';
 
 interface CashierManagementTabProps {
   onSwitchTab?: (tabId: string) => void;
 }
 
 export const CashierManagementTab: React.FC<CashierManagementTabProps> = ({ onSwitchTab }) => {
-  const { transactions, config, currentUser } = useERP();
+  const { transactions, config, currentUser, paymentMethods } = useERP();
 
   const [dateFilter, setDateFilter] = useState<'today' | '7days' | 'month' | 'all'>('today');
   const [selectedCashier, setSelectedCashier] = useState<string>('Semua');
-  const [selectedMethodFilter, setSelectedMethodFilter] = useState<'Semua' | PaymentMethod>('Semua');
+  const [selectedMethodFilter, setSelectedMethodFilter] = useState<string>('Semua');
   const [search, setSearch] = useState('');
   
+  // Payment methods manager modal state
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+
   // Shift close modal state
   const [showShiftCloseModal, setShowShiftCloseModal] = useState(false);
   const [cashDrawerCount, setCashDrawerCount] = useState<number | ''>('');
@@ -72,9 +78,9 @@ export const CashierManagementTab: React.FC<CashierManagementTabProps> = ({ onSw
   const averageTicket = totalTransactionsCount > 0 ? Math.round(totalSales / totalTransactionsCount) : 0;
 
   // -------------------------------------------------------------
-  // SEPARATE CALCULATIONS BY PAYMENT METHOD CATEGORY
+  // DYNAMIC CALCULATIONS BY PAYMENT METHOD
   // -------------------------------------------------------------
-  const getMethodStats = (method: PaymentMethod) => {
+  const getMethodStats = (method: string) => {
     const list = cashierFilteredTransactions.filter(t => t.paymentMethod === method);
     const amount = list.reduce((sum, t) => sum + t.total, 0);
     const count = list.length;
@@ -82,19 +88,71 @@ export const CashierManagementTab: React.FC<CashierManagementTabProps> = ({ onSw
     return { list, amount, count, percentage };
   };
 
-  const cashStats = getMethodStats('TUNAI');
-  const qrisStats = getMethodStats('QRIS');
-  const transferStats = getMethodStats('TRANSFER');
-  const debitStats = getMethodStats('DEBIT');
+  // Unique list of active methods: current paymentMethods + any historical method found in transactions
+  const activeMethods = Array.from(new Set([...paymentMethods, ...cashierFilteredTransactions.map(t => t.paymentMethod)]));
 
-  // Total cash received and change given for TUNAI
+  // TUNAI Cash Stats
+  const cashStats = getMethodStats('TUNAI');
   const totalCashReceived = cashStats.list.reduce((sum, t) => sum + (t.cashReceived || t.total), 0);
   const totalChangeGiven = cashStats.list.reduce((sum, t) => sum + (t.change || 0), 0);
   const netCashInDrawer = totalCashReceived - totalChangeGiven;
 
-  // Digital (Non-tunai) total
-  const totalDigitalSales = qrisStats.amount + transferStats.amount + debitStats.amount;
-  const totalDigitalCount = qrisStats.count + transferStats.count + debitStats.count;
+  // Non-Cash Digital total
+  const nonCashTransactions = cashierFilteredTransactions.filter(t => t.paymentMethod !== 'TUNAI');
+  const totalDigitalSales = nonCashTransactions.reduce((sum, t) => sum + t.total, 0);
+  const totalDigitalCount = nonCashTransactions.length;
+
+  const getMethodCardStyle = (name: string) => {
+    const upper = name.toUpperCase();
+    if (upper.includes('TUNAI') || upper.includes('CASH')) {
+      return {
+        badgeBg: 'bg-emerald-200 text-emerald-900',
+        cardBorder: 'border-emerald-200',
+        cardBg: 'bg-emerald-50/40',
+        iconBg: 'bg-emerald-100 text-emerald-800',
+        textColor: 'text-emerald-700',
+        icon: <Banknote size={16} />
+      };
+    }
+    if (upper.includes('QRIS') || upper.includes('QR')) {
+      return {
+        badgeBg: 'bg-amber-200 text-amber-900',
+        cardBorder: 'border-amber-300',
+        cardBg: 'bg-amber-50/50',
+        iconBg: 'bg-amber-200 text-amber-900',
+        textColor: 'text-amber-700',
+        icon: <QrCode size={16} />
+      };
+    }
+    if (upper.includes('TRANSFER') || upper.includes('BANK')) {
+      return {
+        badgeBg: 'bg-slate-200 text-slate-800',
+        cardBorder: 'border-slate-300',
+        cardBg: 'bg-slate-50',
+        iconBg: 'bg-slate-200 text-slate-800',
+        textColor: 'text-slate-900',
+        icon: <Building2 size={16} />
+      };
+    }
+    if (upper.includes('GOPAY') || upper.includes('SHOPEE') || upper.includes('OVO') || upper.includes('DANA')) {
+      return {
+        badgeBg: 'bg-cyan-200 text-cyan-900',
+        cardBorder: 'border-cyan-200',
+        cardBg: 'bg-cyan-50/40',
+        iconBg: 'bg-cyan-100 text-cyan-800',
+        textColor: 'text-cyan-700',
+        icon: <Smartphone size={16} />
+      };
+    }
+    return {
+      badgeBg: 'bg-red-200 text-red-900',
+      cardBorder: 'border-red-200',
+      cardBg: 'bg-red-50/40',
+      iconBg: 'bg-red-100 text-red-800',
+      textColor: 'text-red-700',
+      icon: <CreditCard size={16} />
+    };
+  };
 
   // Final table list with method and search filters
   const displayedTransactions = cashierFilteredTransactions.filter(t => {
@@ -183,12 +241,22 @@ export const CashierManagementTab: React.FC<CashierManagementTabProps> = ({ onSw
     doc.text('TOTAL RUPIAH', 160, curY + 4.5);
 
     curY += 6.5;
-    const methodsData = [
-      { name: 'TUNAI (Uang Fisik Laci)', count: cashStats.count, pct: `${cashStats.percentage}%`, amount: formatRupiah(cashStats.amount), color: [16, 185, 129] },
-      { name: 'QRIS (Dinamis / Statis)', count: qrisStats.count, pct: `${qrisStats.percentage}%`, amount: formatRupiah(qrisStats.amount), color: [220, 38, 38] },
-      { name: 'TRANSFER BANK', count: transferStats.count, pct: `${transferStats.percentage}%`, amount: formatRupiah(transferStats.amount), color: [217, 119, 6] },
-      { name: 'KARTU DEBIT / EDC', count: debitStats.count, pct: `${debitStats.percentage}%`, amount: formatRupiah(debitStats.amount), color: [71, 85, 105] },
-    ];
+    const methodsData = activeMethods.map(m => {
+      const stats = getMethodStats(m);
+      const upper = m.toUpperCase();
+      let color = [71, 85, 105];
+      if (upper.includes('TUNAI') || upper.includes('CASH')) color = [16, 185, 129];
+      else if (upper.includes('QRIS')) color = [220, 38, 38];
+      else if (upper.includes('TRANSFER')) color = [217, 119, 6];
+
+      return {
+        name: upper.includes('TUNAI') ? `${m} (Uang Fisik Laci)` : m,
+        count: stats.count,
+        pct: `${stats.percentage}%`,
+        amount: formatRupiah(stats.amount),
+        color
+      };
+    });
 
     methodsData.forEach((m, idx) => {
       if (idx % 2 === 1) {
@@ -312,6 +380,16 @@ export const CashierManagementTab: React.FC<CashierManagementTabProps> = ({ onSw
             </select>
           )}
 
+          {/* Kelola Metode Pembayaran Button */}
+          <button
+            onClick={() => setShowPaymentModal(true)}
+            className="flex items-center space-x-1.5 px-3 py-1.5 sm:py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs shadow-xs transition cursor-pointer"
+            title="Edit, Tambah, atau Hapus Metode Pembayaran Kasir"
+          >
+            <CreditCard size={14} className="text-amber-400" />
+            <span>Kelola Metode Pembayaran</span>
+          </button>
+
           {/* Print Shift Report */}
           <button
             onClick={handlePrintShiftReport}
@@ -399,7 +477,7 @@ export const CashierManagementTab: React.FC<CashierManagementTabProps> = ({ onSw
         </div>
       </div>
 
-      {/* SECTION: PEMISAHAN METODE PEMBAYARAN SECARA TERPISAH (4 Cards) */}
+      {/* SECTION: PEMISAHAN METODE PEMBAYARAN DINAMIS */}
       <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
           <div>
@@ -407,163 +485,93 @@ export const CashierManagementTab: React.FC<CashierManagementTabProps> = ({ onSw
               Pemisahan Penjualan Berdasarkan Kategori Metode Pembayaran
             </h3>
             <p className="text-[11px] sm:text-xs text-slate-500">
-              Rincian komparasi arus kas masuk: Tunai fisik laci, QRIS dinamis, transfer bank, dan kartu debit.
+              Rincian komparasi arus kas masuk: Tunai fisik laci, QRIS dinamis, transfer bank, dan metode lainnya.
             </p>
           </div>
+          <button
+            onClick={() => setShowPaymentModal(true)}
+            className="self-start sm:self-auto flex items-center space-x-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl font-bold text-xs transition cursor-pointer"
+          >
+            <CreditCard size={14} />
+            <span>+ Edit / Tambah Metode</span>
+          </button>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          {/* 1. TUNAI */}
-          <div className="p-4 rounded-2xl border border-emerald-200 bg-emerald-50/40 space-y-3 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <span className="p-1.5 bg-emerald-100 text-emerald-800 rounded-lg">
-                    <Banknote size={16} />
-                  </span>
-                  <span className="font-black text-xs text-emerald-950 uppercase">1. TUNAI (CASH)</span>
+          {activeMethods.map((methodName, idx) => {
+            const stats = getMethodStats(methodName);
+            const style = getMethodCardStyle(methodName);
+            const isCash = methodName.toUpperCase().includes('TUNAI') || methodName.toUpperCase().includes('CASH');
+
+            return (
+              <div
+                key={methodName}
+                className={`p-4 rounded-2xl border ${style.cardBorder} ${style.cardBg} space-y-3 flex flex-col justify-between`}
+              >
+                <div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <span className={`p-1.5 rounded-lg ${style.iconBg}`}>
+                        {style.icon}
+                      </span>
+                      <span className="font-black text-xs text-slate-900 uppercase">
+                        {idx + 1}. {methodName}
+                      </span>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${style.badgeBg}`}>
+                      {stats.percentage}%
+                    </span>
+                  </div>
+
+                  <div className="mt-3">
+                    <span className="text-xs text-slate-500">Total Omset {methodName}:</span>
+                    <p className={`text-xl font-black ${style.textColor}`}>
+                      {formatRupiah(stats.amount)}
+                    </p>
+                  </div>
                 </div>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-200 text-emerald-900">
-                  {cashStats.percentage}%
-                </span>
-              </div>
 
-              <div className="mt-3">
-                <span className="text-xs text-slate-500">Total Omset Tunai:</span>
-                <p className="text-xl font-black text-emerald-700">{formatRupiah(cashStats.amount)}</p>
-              </div>
-            </div>
+                <div className="pt-2 border-t border-slate-200/80 text-[11px] text-slate-600 space-y-1">
+                  <div className="flex justify-between">
+                    <span>Jumlah Transaksi:</span>
+                    <span className="font-bold text-slate-900">{stats.count} nota</span>
+                  </div>
 
-            <div className="pt-2 border-t border-emerald-200/60 text-[11px] text-slate-600 space-y-1">
-              <div className="flex justify-between">
-                <span>Jumlah Transaksi:</span>
-                <span className="font-bold text-slate-900">{cashStats.count} nota</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Uang Diterima:</span>
-                <span className="font-bold text-slate-900">{formatRupiah(totalCashReceived)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Total Kembalian:</span>
-                <span className="font-bold text-slate-900">-{formatRupiah(totalChangeGiven)}</span>
-              </div>
-              <div className="flex justify-between font-bold text-emerald-800 pt-1 border-t border-emerald-200/40">
-                <span>Net Fisik Laci:</span>
-                <span>{formatRupiah(netCashInDrawer)}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* 2. QRIS */}
-          <div className="p-4 rounded-2xl border border-amber-300 bg-amber-50/50 space-y-3 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <span className="p-1.5 bg-amber-200 text-amber-900 rounded-lg">
-                    <QrCode size={16} />
-                  </span>
-                  <span className="font-black text-xs text-amber-950 uppercase">2. QRIS DINAMIS</span>
+                  {isCash ? (
+                    <>
+                      <div className="flex justify-between">
+                        <span>Uang Diterima:</span>
+                        <span className="font-bold text-slate-900">{formatRupiah(totalCashReceived)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Total Kembalian:</span>
+                        <span className="font-bold text-slate-900">-{formatRupiah(totalChangeGiven)}</span>
+                      </div>
+                      <div className="flex justify-between font-bold text-emerald-800 pt-1 border-t border-emerald-200/60">
+                        <span>Net Fisik Laci:</span>
+                        <span>{formatRupiah(netCashInDrawer)}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex justify-between">
+                        <span>Status Dana:</span>
+                        <span className="font-bold text-slate-800">
+                          {methodName.toUpperCase().includes('QRIS') ? 'Bank Settlement' : 'Terverifikasi Kasir'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Kanal:</span>
+                        <span className="font-bold text-slate-900">
+                          {methodName}
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </div>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-200 text-amber-900">
-                  {qrisStats.percentage}%
-                </span>
               </div>
-
-              <div className="mt-3">
-                <span className="text-xs text-slate-600">Total Omset QRIS:</span>
-                <p className="text-xl font-black text-amber-700">{formatRupiah(qrisStats.amount)}</p>
-              </div>
-            </div>
-
-            <div className="pt-2 border-t border-amber-200/80 text-[11px] text-slate-700 space-y-1">
-              <div className="flex justify-between">
-                <span>Jumlah Transaksi:</span>
-                <span className="font-bold text-slate-900">{qrisStats.count} nota</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Status Dana:</span>
-                <span className="font-bold text-amber-800">Bank Settlement</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Kanal Pembayaran:</span>
-                <span className="font-bold text-slate-900">BCA/GoPay/Dana</span>
-              </div>
-            </div>
-          </div>
-
-          {/* 3. TRANSFER BANK */}
-          <div className="p-4 rounded-2xl border border-slate-300 bg-slate-50 space-y-3 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <span className="p-1.5 bg-slate-200 text-slate-800 rounded-lg">
-                    <Building2 size={16} />
-                  </span>
-                  <span className="font-black text-xs text-slate-900 uppercase">3. TRANSFER BANK</span>
-                </div>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-slate-200 text-slate-800">
-                  {transferStats.percentage}%
-                </span>
-              </div>
-
-              <div className="mt-3">
-                <span className="text-xs text-slate-600">Total Omset Transfer:</span>
-                <p className="text-xl font-black text-slate-900">{formatRupiah(transferStats.amount)}</p>
-              </div>
-            </div>
-
-            <div className="pt-2 border-t border-slate-200 text-[11px] text-slate-700 space-y-1">
-              <div className="flex justify-between">
-                <span>Jumlah Transaksi:</span>
-                <span className="font-bold text-slate-900">{transferStats.count} nota</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Status Dana:</span>
-                <span className="font-bold text-slate-800">Rekening Usaha</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Rekening Tujuan:</span>
-                <span className="font-bold text-slate-900">BCA / Mandiri</span>
-              </div>
-            </div>
-          </div>
-
-          {/* 4. KARTU DEBIT */}
-          <div className="p-4 rounded-2xl border border-red-200 bg-red-50/40 space-y-3 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <span className="p-1.5 bg-red-100 text-red-800 rounded-lg">
-                    <CreditCard size={16} />
-                  </span>
-                  <span className="font-black text-xs text-red-950 uppercase">4. KARTU DEBIT</span>
-                </div>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-red-200 text-red-900">
-                  {debitStats.percentage}%
-                </span>
-              </div>
-
-              <div className="mt-3">
-                <span className="text-xs text-slate-600">Total Omset Debit:</span>
-                <p className="text-xl font-black text-red-700">{formatRupiah(debitStats.amount)}</p>
-              </div>
-            </div>
-
-            <div className="pt-2 border-t border-red-200/60 text-[11px] text-slate-700 space-y-1">
-              <div className="flex justify-between">
-                <span>Jumlah Transaksi:</span>
-                <span className="font-bold text-slate-900">{debitStats.count} nota</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Kliring:</span>
-                <span className="font-bold text-red-800">Mesin EDC Toko</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Kartu:</span>
-                <span className="font-bold text-slate-900">GPN / Visa / Master</span>
-              </div>
-            </div>
-          </div>
+            );
+          })}
         </div>
       </div>
 
@@ -572,11 +580,11 @@ export const CashierManagementTab: React.FC<CashierManagementTabProps> = ({ onSw
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           {/* Method Filter Pills */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-            {(['Semua', 'TUNAI', 'QRIS', 'TRANSFER', 'DEBIT'] as const).map(m => (
+            {['Semua', ...paymentMethods].map(m => (
               <button
                 key={m}
                 onClick={() => setSelectedMethodFilter(m)}
-                className={`px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap cursor-pointer ${
                   selectedMethodFilter === m
                     ? 'bg-red-600 text-white shadow-xs'
                     : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
@@ -648,6 +656,12 @@ export const CashierManagementTab: React.FC<CashierManagementTabProps> = ({ onSw
           </table>
         </div>
       </div>
+
+      {/* PAYMENT METHOD MANAGER MODAL */}
+      <PaymentMethodModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+      />
     </div>
   );
 };

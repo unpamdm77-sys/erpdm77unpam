@@ -118,9 +118,11 @@ interface ERPContextType {
   addMenuCategory: (cat: string) => void;
   updateMenuCategory: (oldCat: string, newCat: string) => void;
   deleteMenuCategory: (cat: string) => void;
+  reorderMenuCategories: (newOrder: string[]) => void;
   addMaterialCategory: (cat: string) => void;
   updateMaterialCategory: (oldCat: string, newCat: string) => void;
   deleteMaterialCategory: (cat: string) => void;
+  reorderMaterialCategories: (newOrder: string[]) => void;
 
   // Dynamic Payment Methods (Customizable, Add, Edit, Delete)
   paymentMethods: string[];
@@ -1954,6 +1956,12 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
+  const reorderMenuCategories = (newOrder: string[]) => {
+    setMenuCategories(newOrder);
+    localStorage.setItem(STORAGE_KEYS.MENU_CATS, JSON.stringify(newOrder));
+    saveSettingsToFirestore({ menuCategories: newOrder });
+  };
+
   // Dynamic Categories (Material)
   const addMaterialCategory = (cat: string) => {
     const trimmed = cat.trim();
@@ -1986,6 +1994,12 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       saveSettingsToFirestore({ materialCategories: updated });
       return updated;
     });
+  };
+
+  const reorderMaterialCategories = (newOrder: string[]) => {
+    setMaterialCategories(newOrder);
+    localStorage.setItem(STORAGE_KEYS.MATERIAL_CATS, JSON.stringify(newOrder));
+    saveSettingsToFirestore({ materialCategories: newOrder });
   };
 
   // Dynamic Payment Methods (Customizable, Add, Edit, Delete)
@@ -2154,9 +2168,11 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addMenuCategory,
         updateMenuCategory,
         deleteMenuCategory,
+        reorderMenuCategories,
         addMaterialCategory,
         updateMaterialCategory,
         deleteMaterialCategory,
+        reorderMaterialCategories,
         paymentMethods,
         addPaymentMethod,
         updatePaymentMethod,

@@ -258,6 +258,7 @@ export async function deleteUserFromFirestore(id: string) {
 export async function saveSettingsToFirestore(settings: {
   menuCategories?: string[];
   materialCategories?: string[];
+  paymentMethods?: string[];
   salesTargets?: SalesTarget;
 }) {
   const path = 'settings/store_config';
@@ -282,12 +283,14 @@ export async function seedAllToFirestore(data: {
   menuCategories: string[];
   materialCategories: string[];
   salesTargets: SalesTarget;
+  paymentMethods?: string[];
 }) {
   try {
     // 1. Settings
     await setDoc(doc(db, 'settings', 'store_config'), sanitizeForFirestore({
       menuCategories: data.menuCategories || [],
       materialCategories: data.materialCategories || [],
+      paymentMethods: data.paymentMethods || [],
       salesTargets: data.salesTargets || {},
       lastUpdated: new Date().toISOString()
     }), { merge: true });

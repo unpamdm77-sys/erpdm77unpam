@@ -27,8 +27,10 @@ import {
   RotateCcw,
   Sparkles,
   ChevronRight,
-  ShieldCheck
+  ShieldCheck,
+  SlidersHorizontal
 } from 'lucide-react';
+import { CategoryManagerModal } from '../categories/CategoryManagerModal';
 
 const PEDAS_OPTIONS = ['Normal', 'Pedas Sedang', 'Extra Pedas'];
 const TORCH_OPTIONS = ['Normal Melt', 'Extra Gosong Wangi', 'Tanpa Torch (Dingin)'];
@@ -68,7 +70,8 @@ export const PosTab: React.FC = () => {
     config,
     updateConfig,
     currentUser,
-    addQuickToppingToCartItem
+    addQuickToppingToCartItem,
+    paymentMethods
   } = useERP();
 
   const [search, setSearch] = useState('');
@@ -82,6 +85,7 @@ export const PosTab: React.FC = () => {
   const [showQrisModal, setShowQrisModal] = useState(false);
   const [showShiftModal, setShowShiftModal] = useState(false);
   const [showParkedModal, setShowParkedModal] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [completedTransaction, setCompletedTransaction] = useState<Transaction | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -255,6 +259,15 @@ export const PosTab: React.FC = () => {
               {cat}
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => setShowCategoryModal(true)}
+            className="px-2.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 transition flex items-center space-x-1 shrink-0 cursor-pointer border border-slate-200/60"
+            title="Kelola & Geser Urutan Kategori Menu"
+          >
+            <SlidersHorizontal size={13} className="text-amber-600" />
+            <span>Atur & Geser Urutan</span>
+          </button>
         </div>
 
         {/* Menu Grid */}
@@ -734,8 +747,8 @@ export const PosTab: React.FC = () => {
               </div>
 
               {/* Method Tabs */}
-              <div className="grid grid-cols-3 gap-2">
-                {(['TUNAI', 'QRIS', 'TRANSFER'] as const).map(method => (
+              <div className="flex flex-wrap gap-1.5">
+                {paymentMethods.map(method => (
                   <button
                     key={method}
                     type="button"
@@ -746,16 +759,26 @@ export const PosTab: React.FC = () => {
                         setShowQrisModal(true);
                       }
                     }}
-                    className={`py-2 px-1 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                    className={`flex-1 min-w-[70px] py-2 px-1 rounded-xl text-xs font-bold border transition cursor-pointer text-center ${
                       selectedPayment === method
                         ? 'bg-red-600 text-white border-red-600 shadow-xs'
-                        : 'bg-slate-50 border-slate-200 text-slate-700'
+                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
                     }`}
                   >
                     {method}
                   </button>
                 ))}
               </div>
+
+              {/* Non-Cash Info */}
+              {selectedPayment !== 'TUNAI' && (
+                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between text-xs">
+                  <span className="text-slate-600 font-medium">Metode Non-Tunai:</span>
+                  <span className="font-extrabold text-slate-900 bg-white px-2.5 py-1 rounded-lg border border-slate-200">
+                    {selectedPayment}
+                  </span>
+                </div>
+              )}
 
               {/* Tunai fields */}
               {selectedPayment === 'TUNAI' && (
@@ -908,6 +931,14 @@ export const PosTab: React.FC = () => {
           transaction={completedTransaction}
           config={config}
           onClose={() => setCompletedTransaction(null)}
+        />
+      )}
+
+      {/* CATEGORY MANAGER MODAL (ATUR & GESER URUTAN) */}
+      {showCategoryModal && (
+        <CategoryManagerModal
+          onClose={() => setShowCategoryModal(false)}
+          defaultTab="menu"
         />
       )}
     </div>

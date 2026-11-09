@@ -30,7 +30,8 @@ export const HistoryTab: React.FC = () => {
     verifySupervisorOrOwnerPin,
     config,
     currentUser,
-    users
+    users,
+    paymentMethods
   } = useERP();
 
   const [search, setSearch] = useState('');
@@ -172,11 +173,11 @@ export const HistoryTab: React.FC = () => {
       <div className="bg-white rounded-3xl p-4 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-            {['Semua', 'TUNAI', 'QRIS', 'TRANSFER', 'DEBIT'].map(m => (
+            {['Semua', ...paymentMethods].map(m => (
               <button
                 key={m}
                 onClick={() => setSelectedMethod(m)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
                   selectedMethod === m
                     ? 'bg-red-600 text-white shadow-xs'
                     : 'bg-slate-50 text-slate-600 hover:bg-slate-100'

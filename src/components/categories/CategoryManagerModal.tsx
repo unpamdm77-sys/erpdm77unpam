@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useERP } from '../../context/ERPContext';
-import { X, Plus, Edit2, Trash2, Check, Tags, Utensils, Boxes, AlertCircle } from 'lucide-react';
+import { X, Plus, Edit2, Trash2, Check, Tags, Utensils, Boxes, AlertCircle, ArrowUp, ArrowDown, GripVertical } from 'lucide-react';
 
 interface CategoryManagerModalProps {
   onClose: () => void;
@@ -17,9 +17,11 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
     addMenuCategory,
     updateMenuCategory,
     deleteMenuCategory,
+    reorderMenuCategories,
     addMaterialCategory,
     updateMaterialCategory,
     deleteMaterialCategory,
+    reorderMaterialCategories,
     menuItems,
     materials,
     currentUser
@@ -30,8 +32,62 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
   const [editingCatName, setEditingCatName] = useState<string | null>(null);
   const [editingCatValue, setEditingCatValue] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
 
-  const canEdit = currentUser.role === 'OWNER' || currentUser.role === 'FINANCE';
+  const canEdit = currentUser.role === 'OWNER' || currentUser.role === 'FINANCE' || currentUser.role === 'SUPERVISOR';
+
+  const handleMoveUp = (index: number) => {
+    if (index <= 0) return;
+    const isMenu = activeSubTab === 'menu';
+    const list = isMenu ? [...menuCategories] : [...materialCategories];
+    const item = list[index];
+    list[index] = list[index - 1];
+    list[index - 1] = item;
+    if (isMenu) {
+      reorderMenuCategories(list);
+    } else {
+      reorderMaterialCategories(list);
+    }
+  };
+
+  const handleMoveDown = (index: number) => {
+    const isMenu = activeSubTab === 'menu';
+    const list = isMenu ? [...menuCategories] : [...materialCategories];
+    if (index >= list.length - 1) return;
+    const item = list[index];
+    list[index] = list[index + 1];
+    list[index + 1] = item;
+    if (isMenu) {
+      reorderMenuCategories(list);
+    } else {
+      reorderMaterialCategories(list);
+    }
+  };
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIdx(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    if (draggedIdx === null || draggedIdx === targetIndex) return;
+    const isMenu = activeSubTab === 'menu';
+    const list = isMenu ? [...menuCategories] : [...materialCategories];
+    const [moved] = list.splice(draggedIdx, 1);
+    list.splice(targetIndex, 0, moved);
+    if (isMenu) {
+      reorderMenuCategories(list);
+    } else {
+      reorderMaterialCategories(list);
+    }
+    setDraggedIdx(null);
+  };
 
   const handleAddCategory = (e: React.FormEvent) => {
     e.preventDefault();
@@ -215,13 +271,18 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
 
           {/* Category List */}
           <div className="space-y-2">
-            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              Daftar Kategori Aktif
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                Daftar Kategori Aktif ({currentList.length})
+              </p>
+              <p className="text-[10px] font-medium text-slate-400">
+                Geser (drag) atau klik panah ↑ / ↓ untuk atur urutan
+              </p>
+            </div>
             {currentList.length === 0 ? (
               <p className="text-center py-6 text-xs text-slate-400">Belum ada kategori.</p>
             ) : (
-              currentList.map(cat => {
+              currentList.map((cat, idx) => {
                 const isEditing = editingCatName === cat;
                 const usedCount =
                   activeSubTab === 'menu'
@@ -231,7 +292,13 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
                 return (
                   <div
                     key={cat}
-                    className="p-3 rounded-xl border border-slate-200 bg-slate-50/60 flex items-center justify-between gap-3 hover:bg-white hover:shadow-xs transition"
+                    draggable={canEdit && !isEditing}
+                    onDragStart={e => handleDragStart(e, idx)}
+                    onDragOver={handleDragOver}
+                    onDrop={e => handleDrop(e, idx)}
+                    className={`p-2.5 sm:p-3 rounded-xl border border-slate-200 bg-slate-50/70 flex items-center justify-between gap-2.5 hover:bg-white hover:shadow-xs transition ${
+                      draggedIdx === idx ? 'opacity-40 border-dashed border-amber-500 bg-amber-50/50' : ''
+                    }`}
                   >
                     {isEditing ? (
                       <div className="flex-1 flex items-center gap-2">
@@ -265,29 +332,61 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
                       </div>
                     ) : (
                       <>
-                        <div className="flex items-center space-x-2.5">
-                          <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                          <span className="text-xs font-bold text-slate-800">{cat}</span>
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-200/80 text-slate-600">
+                        <div className="flex items-center space-x-2 flex-1 min-w-0">
+                          {canEdit && (
+                            <div className="flex items-center space-x-0.5 shrink-0 text-slate-400">
+                              <span
+                                className="cursor-grab active:cursor-grabbing p-1 hover:text-slate-700"
+                                title="Geser untuk ubah urutan"
+                              >
+                                <GripVertical size={14} />
+                              </span>
+                              <div className="flex flex-col">
+                                <button
+                                  type="button"
+                                  disabled={idx === 0}
+                                  onClick={() => handleMoveUp(idx)}
+                                  className="p-0.5 text-slate-400 hover:text-amber-600 disabled:opacity-20 disabled:hover:text-slate-400 transition"
+                                  title="Geser Naik (Ke Atas)"
+                                >
+                                  <ArrowUp size={11} />
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={idx === currentList.length - 1}
+                                  onClick={() => handleMoveDown(idx)}
+                                  className="p-0.5 text-slate-400 hover:text-amber-600 disabled:opacity-20 disabled:hover:text-slate-400 transition"
+                                  title="Geser Turun (Ke Bawah)"
+                                >
+                                  <ArrowDown size={11} />
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                          <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+                          <span className="text-xs font-bold text-slate-800 truncate">{cat}</span>
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-200/80 text-slate-600 shrink-0">
                             {usedCount} item
                           </span>
                         </div>
 
                         {canEdit && (
-                          <div className="flex items-center space-x-1">
+                          <div className="flex items-center space-x-1 shrink-0">
                             <button
+                              type="button"
                               onClick={() => handleStartEdit(cat)}
                               className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition"
                               title="Ubah Nama Kategori"
                             >
-                              <Edit2 size={14} />
+                              <Edit2 size={13} />
                             </button>
                             <button
+                              type="button"
                               onClick={() => handleDelete(cat)}
                               className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
                               title="Hapus Kategori"
                             >
-                              <Trash2 size={14} />
+                              <Trash2 size={13} />
                             </button>
                           </div>
                         )}
