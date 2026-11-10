@@ -26,8 +26,9 @@ import {
 // Initialize Firebase App safely (singleton)
 export const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// CRITICAL: Must pass firebaseConfig.firestoreDatabaseId
-export const db = getFirestore(app, (firebaseConfig as any).firestoreDatabaseId);
+// CRITICAL: Must pass firebaseConfig.firestoreDatabaseId with named DB fallback
+const firestoreDbId = (firebaseConfig as any).firestoreDatabaseId || 'ai-studio-erpposdimsumment-5fcc74cb-640a-420d-b1ba-06af156ff609';
+export const db = getFirestore(app, firestoreDbId);
 export const auth = getAuth(app);
 
 export enum OperationType {
@@ -81,14 +82,20 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
  */
 export async function testFirestoreConnection(): Promise<boolean> {
   try {
-    await getDocFromServer(doc(db, 'settings', 'test_connection'));
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('timeout')), 5000)
+    );
+    await Promise.race([
+      getDocFromServer(doc(db, 'settings', 'store_config')),
+      timeoutPromise
+    ]);
     return true;
   } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error("Please check your Firebase configuration: client is offline.");
+    if (error instanceof Error && (error.message.includes('the client is offline') || error.message === 'timeout')) {
+      console.warn("Firestore connection check notice: ", error.message);
       return false;
     }
-    // Any other response means we connected to the server
+    // Any other response (such as document not found) confirms server reached
     return true;
   }
 }

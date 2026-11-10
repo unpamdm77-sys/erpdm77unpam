@@ -272,7 +272,10 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [materials, setMaterials] = useState<Material[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.MATERIALS);
     if (saved !== null) {
-      try { return JSON.parse(saved); } catch {}
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {}
     }
     return INITIAL_MATERIALS;
   });
@@ -280,7 +283,10 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [menuItems, setMenuItems] = useState<MenuItem[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.MENU);
     if (saved !== null) {
-      try { return JSON.parse(saved); } catch {}
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {}
     }
     return INITIAL_MENU_ITEMS;
   });
@@ -767,18 +773,34 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // 1. Materials listener
     const unsubMaterials = onSnapshot(collection(db, 'materials'), snapshot => {
-      const cloudMaterials = snapshot.docs.map(d => d.data() as Material);
-      setMaterials(cloudMaterials);
+      setFirestoreStatus('connected');
+      setIsOnline(true);
+      if (!snapshot.empty) {
+        const cloudMaterials = snapshot.docs.map(d => d.data() as Material);
+        setMaterials(cloudMaterials);
+      } else {
+        INITIAL_MATERIALS.forEach(m => saveMaterialToFirestore(m));
+        setMaterials(INITIAL_MATERIALS);
+      }
     }, err => handleFirestoreError(err, OperationType.LIST, 'materials'));
 
     // 2. Menu items listener
     const unsubMenu = onSnapshot(collection(db, 'menuItems'), snapshot => {
-      const cloudMenu = snapshot.docs.map(d => d.data() as MenuItem);
-      setMenuItems(cloudMenu);
+      setFirestoreStatus('connected');
+      setIsOnline(true);
+      if (!snapshot.empty) {
+        const cloudMenu = snapshot.docs.map(d => d.data() as MenuItem);
+        setMenuItems(cloudMenu);
+      } else {
+        INITIAL_MENU_ITEMS.forEach(mi => saveMenuItemToFirestore(mi));
+        setMenuItems(INITIAL_MENU_ITEMS);
+      }
     }, err => handleFirestoreError(err, OperationType.LIST, 'menuItems'));
 
     // 3. Transactions listener
     const unsubTransactions = onSnapshot(collection(db, 'transactions'), snapshot => {
+      setFirestoreStatus('connected');
+      setIsOnline(true);
       const cloudTrx = snapshot.docs.map(d => d.data() as Transaction);
       cloudTrx.sort((a, b) => (b.date || b.id).localeCompare(a.date || a.id));
       setTransactions(cloudTrx);
@@ -786,6 +808,8 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // 4. Purchases listener
     const unsubPurchases = onSnapshot(collection(db, 'purchases'), snapshot => {
+      setFirestoreStatus('connected');
+      setIsOnline(true);
       const cloudPurchases = snapshot.docs.map(d => d.data() as PurchaseOrder);
       cloudPurchases.sort((a, b) => (b.date || b.id).localeCompare(a.date || a.id));
       setPurchases(cloudPurchases);
@@ -793,6 +817,8 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // 5. Expenses listener
     const unsubExpenses = onSnapshot(collection(db, 'expenses'), snapshot => {
+      setFirestoreStatus('connected');
+      setIsOnline(true);
       const cloudExpenses = snapshot.docs.map(d => d.data() as Expense);
       cloudExpenses.sort((a, b) => (b.date || b.id).localeCompare(a.date || a.id));
       setExpenses(cloudExpenses);
@@ -800,6 +826,8 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // 6. Adjustments listener
     const unsubAdjustments = onSnapshot(collection(db, 'adjustments'), snapshot => {
+      setFirestoreStatus('connected');
+      setIsOnline(true);
       const cloudAdj = snapshot.docs.map(d => d.data() as StockAdjustment);
       cloudAdj.sort((a, b) => (b.date || b.id).localeCompare(a.date || a.id));
       setAdjustments(cloudAdj);
@@ -807,6 +835,8 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // 7. Stock Requests (RSI) listener
     const unsubStockRequests = onSnapshot(collection(db, 'stockRequests'), snapshot => {
+      setFirestoreStatus('connected');
+      setIsOnline(true);
       const cloudReqs = snapshot.docs.map(d => d.data() as StockRequest);
       cloudReqs.sort((a, b) => (b.date || b.id).localeCompare(a.date || a.id));
       setStockRequests(cloudReqs);
@@ -814,6 +844,8 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // 8. Users listener
     const unsubUsers = onSnapshot(collection(db, 'users'), snapshot => {
+      setFirestoreStatus('connected');
+      setIsOnline(true);
       if (!snapshot.empty) {
         const cloudUsers = snapshot.docs.map(d => d.data() as UserAccount);
         setUsers(cloudUsers);
@@ -824,6 +856,8 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // 9. Settings listener
     const unsubSettings = onSnapshot(doc(db, 'settings', 'store_config'), docSnap => {
+      setFirestoreStatus('connected');
+      setIsOnline(true);
       if (docSnap.exists()) {
         const data = docSnap.data();
         if (data.menuCategories && Array.isArray(data.menuCategories)) {
@@ -875,35 +909,6 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       unsubUsers();
       unsubSettings();
     };
-  }, []);
-
-  // One-time automatic purge of legacy demo input data from Firestore & local storage
-  useEffect(() => {
-    const isPurged = localStorage.getItem('dimsum77_demo_purged_v4');
-    if (!isPurged) {
-      const demoMatIds = Array.from({ length: 30 }, (_, i) => `mat-${i + 1}`);
-      demoMatIds.forEach(id => deleteMaterialFromFirestore(id));
-
-      const demoMenuIds = Array.from({ length: 30 }, (_, i) => `menu-${i + 1}`);
-      demoMenuIds.forEach(id => deleteMenuItemFromFirestore(id));
-
-      const demoTrxIds = Array.from({ length: 30 }, (_, i) => `trx-${i + 1}`);
-      demoTrxIds.forEach(id => deleteTransactionFromFirestore(id));
-
-      const demoPoIds = Array.from({ length: 30 }, (_, i) => `po-${i + 1}`);
-      demoPoIds.forEach(id => deletePurchaseFromFirestore(id));
-
-      const demoExpIds = Array.from({ length: 30 }, (_, i) => `exp-${i + 1}`);
-      demoExpIds.forEach(id => deleteExpenseFromFirestore(id));
-
-      setMaterials(prev => prev.filter(m => !demoMatIds.includes(m.id)));
-      setMenuItems(prev => prev.filter(m => !demoMenuIds.includes(m.id)));
-      setTransactions(prev => prev.filter(t => !demoTrxIds.includes(t.id)));
-      setPurchases(prev => prev.filter(p => !demoPoIds.includes(p.id)));
-      setExpenses(prev => prev.filter(e => !demoExpIds.includes(e.id)));
-
-      localStorage.setItem('dimsum77_demo_purged_v4', 'true');
-    }
   }, []);
 
   // Google Workspace Auth Listener on Mount
