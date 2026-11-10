@@ -29,7 +29,21 @@ export interface MenuItem {
   recipe: RecipeIngredient[];
   image?: string;
   isAvailable: boolean;
+  serviceFeeType?: 'percentage' | 'nominal'; // Biaya layanan online (ShopeeFood, GrabFood, GoFood)
+  serviceFeeValue?: number; // Nilai biaya layanan (e.g. 20 untuk 20% atau 2000 untuk Rp 2.000)
 }
+
+export const calculateServiceFeeAmount = (
+  price: number,
+  type?: 'percentage' | 'nominal',
+  value?: number
+): number => {
+  if (!value || value <= 0) return 0;
+  if (type === 'percentage') {
+    return Math.round((price * value) / 100);
+  }
+  return Math.round(value);
+};
 
 export const getMenuItemCategories = (item: { category?: string; categories?: string[] }): string[] => {
   if (Array.isArray(item.categories) && item.categories.length > 0) {
@@ -132,6 +146,26 @@ export interface ParkedOrder {
   total: number;
 }
 
+export interface StockRequest {
+  id: string;
+  requestNo: string; // e.g. RSI-202611-001
+  date: string; // ISO string
+  materialId: string;
+  materialName: string;
+  materialCode: string;
+  qty: number;
+  unit: UnitType;
+  costPerUnit: number;
+  totalCost: number; // qty * costPerUnit
+  purposeCategory: 'Operasional Toko' | 'Kebersihan & Sanitasi' | 'Peralatan Kitchen' | 'Packaging Tambahan' | 'Listrik / Gas / Baterai' | 'Lain-lain';
+  requestedBy: string;
+  notes: string;
+  status: 'PENDING' | 'COMMITTED';
+  committedBy?: string;
+  committedAt?: string;
+  syncedToGoogleSheet?: boolean;
+}
+
 export interface ShiftSummary {
   cashierName: string;
   startTime: string;
@@ -153,7 +187,7 @@ export interface SalesTarget {
   monthly: number;
 }
 
-export type UserRole = 'OWNER' | 'SUPERVISOR' | 'FINANCE' | 'STAFF';
+export type UserRole = 'OWNER' | 'MANAGER' | 'SUPERVISOR' | 'FINANCE' | 'STAFF';
 
 export interface UserAccount {
   id: string;

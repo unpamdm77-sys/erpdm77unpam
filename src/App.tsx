@@ -9,6 +9,7 @@ import { PurchasingTab } from './components/purchasing/PurchasingTab';
 import { ProductsTab } from './components/products/ProductsTab';
 import { MaterialsTab } from './components/materials/MaterialsTab';
 import { AdjustmentTab } from './components/adjustment/AdjustmentTab';
+import { StockRequestTab } from './components/inventory/StockRequestTab';
 import { FinanceTab } from './components/finance/FinanceTab';
 import { HistoryTab } from './components/history/HistoryTab';
 import { ImportExportTab } from './components/import-export/ImportExportTab';
@@ -80,6 +81,7 @@ const AppContent: React.FC = () => {
             {activeTab === 'products' && <ProductsTab />}
             {activeTab === 'materials' && <MaterialsTab onSwitchTab={setActiveTab} />}
             {activeTab === 'adjustment' && <AdjustmentTab />}
+            {activeTab === 'stock-request' && <StockRequestTab />}
             {activeTab === 'finance' && currentUser.role !== 'STAFF' && currentUser.role !== 'SUPERVISOR' && (
               <FinanceTab />
             )}

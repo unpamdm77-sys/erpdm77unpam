@@ -18,6 +18,7 @@ import {
   PurchaseOrder,
   Expense,
   StockAdjustment,
+  StockRequest,
   UserAccount,
   SalesTarget
 } from '../types/erp';
@@ -232,6 +233,24 @@ export async function deleteAdjustmentFromFirestore(id: string) {
   const path = `adjustments/${id}`;
   try {
     await deleteDoc(doc(db, 'adjustments', id));
+  } catch (err) {
+    handleFirestoreError(err, OperationType.DELETE, path);
+  }
+}
+
+export async function saveStockRequestToFirestore(req: StockRequest) {
+  const path = `stockRequests/${req.id}`;
+  try {
+    await setDoc(doc(db, 'stockRequests', req.id), sanitizeForFirestore(req), { merge: true });
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, path);
+  }
+}
+
+export async function deleteStockRequestFromFirestore(id: string) {
+  const path = `stockRequests/${id}`;
+  try {
+    await deleteDoc(doc(db, 'stockRequests', id));
   } catch (err) {
     handleFirestoreError(err, OperationType.DELETE, path);
   }

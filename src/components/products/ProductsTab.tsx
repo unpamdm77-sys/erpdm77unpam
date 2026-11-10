@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useERP } from '../../context/ERPContext';
-import { MenuItem, RecipeIngredient } from '../../types/erp';
+import { MenuItem, RecipeIngredient, calculateServiceFeeAmount } from '../../types/erp';
 import { formatRupiah } from '../../utils/formatters';
 import { CategoryManagerModal } from '../categories/CategoryManagerModal';
 import { HorizontalScrollPills } from '../common/HorizontalScrollPills';
@@ -18,7 +18,8 @@ import {
   Flame,
   Tags,
   Lock,
-  AlertCircle
+  AlertCircle,
+  Smartphone
 } from 'lucide-react';
 import { DecimalInput } from '../common/DecimalInput';
 
@@ -53,6 +54,8 @@ export const ProductsTab: React.FC = () => {
     menuCategories.length > 0 ? [menuCategories[0]] : ['Dimsum Mentai']
   );
   const [price, setPrice] = useState<number | ''>('');
+  const [serviceFeeType, setServiceFeeType] = useState<'percentage' | 'nominal'>('percentage');
+  const [serviceFeeValue, setServiceFeeValue] = useState<number | ''>('');
   const [description, setDescription] = useState('');
   const [image, setImage] = useState<string>('');
   const [recipe, setRecipe] = useState<RecipeIngredient[]>([]);
@@ -124,6 +127,8 @@ export const ProductsTab: React.FC = () => {
     setName('');
     setSelectedCategories(menuCategories.length > 0 ? [menuCategories[0]] : ['Dimsum Mentai']);
     setPrice('');
+    setServiceFeeType('percentage');
+    setServiceFeeValue('');
     setDescription('');
     setImage('');
     // Start with 1 default ingredient
@@ -139,6 +144,8 @@ export const ProductsTab: React.FC = () => {
     const itemCats = (item.categories && item.categories.length > 0) ? item.categories : (item.category ? [item.category] : []);
     setSelectedCategories(itemCats.length > 0 ? itemCats : [menuCategories[0] || 'Dimsum Mentai']);
     setPrice(item.price);
+    setServiceFeeType(item.serviceFeeType || 'percentage');
+    setServiceFeeValue(item.serviceFeeValue !== undefined ? item.serviceFeeValue : '');
     setDescription(item.description);
     setImage(item.image || '');
     setRecipe([...item.recipe]);
@@ -173,6 +180,7 @@ export const ProductsTab: React.FC = () => {
 
     const finalCategories = selectedCategories.length > 0 ? selectedCategories : (menuCategories.length > 0 ? [menuCategories[0]] : ['Umum']);
     const primaryCategory = finalCategories[0];
+    const parsedFee = serviceFeeValue === '' ? undefined : Number(serviceFeeValue);
 
     if (editingItem) {
       updateMenuItem(editingItem.id, {
@@ -181,6 +189,8 @@ export const ProductsTab: React.FC = () => {
         category: primaryCategory,
         categories: finalCategories,
         price: Number(price),
+        serviceFeeType,
+        serviceFeeValue: parsedFee,
         description,
         image: image.trim() ? image : undefined,
         recipe
@@ -192,6 +202,8 @@ export const ProductsTab: React.FC = () => {
         category: primaryCategory,
         categories: finalCategories,
         price: Number(price),
+        serviceFeeType,
+        serviceFeeValue: parsedFee,
         description,
         image: image.trim() ? image : undefined,
         recipe,
@@ -356,22 +368,53 @@ export const ProductsTab: React.FC = () => {
               </div>
 
               {/* Financial Box: Harga Jual vs HPP vs Margin */}
-              <div className="grid grid-cols-3 gap-2 p-3 bg-slate-50 rounded-2xl border border-slate-100 text-center">
-                <div>
-                  <span className="text-[10px] text-slate-400 font-semibold block uppercase">Harga Jual</span>
-                  <span className="text-xs font-bold text-slate-900">{formatRupiah(item.price)}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-400 font-semibold block uppercase">BOM (HPP)</span>
-                  <span className="text-xs font-bold text-slate-800">{formatRupiah(hpp)}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-400 font-semibold block uppercase">Margin Laba</span>
-                  <span className={`text-xs font-bold ${margin >= 40 ? 'text-emerald-600' : 'text-amber-600'}`}>
-                    {margin}% ({formatRupiah(profit)})
-                  </span>
-                </div>
-              </div>
+              {(() => {
+                const serviceFee = calculateServiceFeeAmount(item.price, item.serviceFeeType, item.serviceFeeValue);
+                const hasServiceFee = serviceFee > 0;
+                const totalRealHpp = hpp + serviceFee;
+                const netProfit = item.price - totalRealHpp;
+                const netMargin = item.price > 0 ? Math.round((netProfit / item.price) * 100) : 0;
+
+                return (
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-3 gap-2 p-3 bg-slate-50 rounded-2xl border border-slate-100 text-center">
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-semibold block uppercase">Harga Jual</span>
+                        <span className="text-xs font-bold text-slate-900">{formatRupiah(item.price)}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-semibold block uppercase">BOM (HPP)</span>
+                        <span className="text-xs font-bold text-slate-800">{formatRupiah(hpp)}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-semibold block uppercase">Margin Laba</span>
+                        <span className={`text-xs font-bold ${margin >= 40 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                          {margin}% ({formatRupiah(profit)})
+                        </span>
+                      </div>
+                    </div>
+
+                    {hasServiceFee && (
+                      <div className="px-3 py-2 bg-amber-50/80 rounded-xl border border-amber-200/70 flex items-center justify-between text-[11px]">
+                        <div className="flex items-center space-x-1.5 text-amber-900">
+                          <Smartphone size={13} className="text-amber-600 shrink-0" />
+                          <span>
+                            Layanan Online ({item.serviceFeeType === 'percentage' ? `${item.serviceFeeValue}%` : 'Nominal'}):{' '}
+                            <strong>{formatRupiah(serviceFee)}</strong>
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-slate-500 text-[10px]">Total HPP: </span>
+                          <span className="font-bold text-slate-900">{formatRupiah(totalRealHpp)}</span>
+                          <span className={`ml-1.5 font-bold ${netMargin >= 30 ? 'text-emerald-700' : 'text-amber-700'}`}>
+                            ({netMargin}%)
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Collapsible BOM Recipe Details */}
               <div className="border-t border-slate-100 pt-3">
@@ -504,8 +547,146 @@ export const ProductsTab: React.FC = () => {
                   value={price}
                   onChange={e => setPrice(e.target.value === '' ? '' : Number(e.target.value))}
                   placeholder="Contoh: 20000"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 font-black text-amber-700"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 font-black text-amber-700 text-sm"
                 />
+              </div>
+
+              {/* Biaya Layanan Online (ShopeeFood / GrabFood / GoFood) */}
+              <div className="p-3.5 bg-amber-50/70 rounded-2xl border border-amber-200/80 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-1.5">
+                    <Smartphone size={15} className="text-amber-700" />
+                    <label className="font-bold text-slate-900 uppercase tracking-wider text-[11px]">
+                      Biaya Layanan Online (ShopeeFood, Grab, GoFood)
+                    </label>
+                  </div>
+                  <span className="text-[10px] text-amber-700 font-bold bg-amber-100 px-2 py-0.5 rounded-md">
+                    Opsional / HPP Tambahan
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  Masukkan potongan komisi aplikasi atau biaya layanan per porsi untuk kalkulasi HPP dan margin riil yang akurat.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {/* Toggle Mode: % vs Rp */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">Tipe Biaya Layanan</label>
+                    <div className="grid grid-cols-2 gap-1 p-0.5 bg-white rounded-xl border border-slate-200">
+                      <button
+                        type="button"
+                        onClick={() => setServiceFeeType('percentage')}
+                        className={`py-1.5 text-xs font-bold rounded-lg transition ${
+                          serviceFeeType === 'percentage'
+                            ? 'bg-amber-500 text-white shadow-2xs'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        Persentase (%)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setServiceFeeType('nominal')}
+                        className={`py-1.5 text-xs font-bold rounded-lg transition ${
+                          serviceFeeType === 'nominal'
+                            ? 'bg-amber-500 text-white shadow-2xs'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        Nominal (Rp)
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Input Nilai */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                      {serviceFeeType === 'percentage' ? 'Besaran Komisi (%)' : 'Besaran Nominal (Rp)'}
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="0"
+                        step={serviceFeeType === 'percentage' ? '0.1' : '100'}
+                        value={serviceFeeValue}
+                        onChange={e => setServiceFeeValue(e.target.value === '' ? '' : Number(e.target.value))}
+                        placeholder={serviceFeeType === 'percentage' ? 'Contoh: 20' : 'Contoh: 2000'}
+                        className="w-full px-3 py-1.5 rounded-xl border border-slate-300 font-bold bg-white text-slate-900"
+                      />
+                      <span className="absolute right-3 top-2 text-[10px] font-bold text-slate-400">
+                        {serviceFeeType === 'percentage' ? '%' : 'Rp'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Presets */}
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[10px] text-slate-400 font-semibold">Shortcut Cepat:</span>
+                  {serviceFeeType === 'percentage' ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setServiceFeeValue(15)}
+                        className="px-2 py-0.5 text-[10px] font-bold bg-white hover:bg-amber-100 text-slate-700 rounded-md border border-slate-200"
+                      >
+                        15%
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setServiceFeeValue(20)}
+                        className="px-2 py-0.5 text-[10px] font-bold bg-amber-500 text-white rounded-md border border-amber-600"
+                      >
+                        20% (Shopee/Grab Standar)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setServiceFeeValue(25)}
+                        className="px-2 py-0.5 text-[10px] font-bold bg-white hover:bg-amber-100 text-slate-700 rounded-md border border-slate-200"
+                      >
+                        25%
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setServiceFeeValue('')}
+                        className="px-2 py-0.5 text-[10px] font-bold text-rose-600 hover:underline"
+                      >
+                        Kosongkan
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setServiceFeeValue(1000)}
+                        className="px-2 py-0.5 text-[10px] font-bold bg-white hover:bg-amber-100 text-slate-700 rounded-md border border-slate-200"
+                      >
+                        Rp 1.000
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setServiceFeeValue(2000)}
+                        className="px-2 py-0.5 text-[10px] font-bold bg-amber-500 text-white rounded-md border border-amber-600"
+                      >
+                        Rp 2.000
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setServiceFeeValue(3000)}
+                        className="px-2 py-0.5 text-[10px] font-bold bg-white hover:bg-amber-100 text-slate-700 rounded-md border border-slate-200"
+                      >
+                        Rp 3.000
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setServiceFeeValue('')}
+                        className="px-2 py-0.5 text-[10px] font-bold text-rose-600 hover:underline"
+                      >
+                        Kosongkan
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
 
               <div>
@@ -651,10 +832,43 @@ export const ProductsTab: React.FC = () => {
                   })}
                 </div>
 
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex justify-between items-center text-xs">
-                  <span className="font-bold text-slate-800">Total Biaya Resep (BOM):</span>
-                  <span className="font-black text-slate-900 text-sm">{formatRupiah(calculateFormHpp())}</span>
-                </div>
+                {(() => {
+                  const formBomHpp = calculateFormHpp();
+                  const formPrice = Number(price) || 0;
+                  const formServiceFee = calculateServiceFeeAmount(formPrice, serviceFeeType, serviceFeeValue === '' ? 0 : Number(serviceFeeValue));
+                  const formTotalHpp = formBomHpp + formServiceFee;
+                  const formNetProfit = formPrice - formTotalHpp;
+                  const formMargin = formPrice > 0 ? Math.round((formNetProfit / formPrice) * 100) : 0;
+
+                  return (
+                    <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2 text-xs">
+                      <div className="flex justify-between items-center text-slate-700">
+                        <span>Biaya Bahan Baku (BOM Resep):</span>
+                        <span className="font-bold text-slate-900">{formatRupiah(formBomHpp)}</span>
+                      </div>
+                      {formServiceFee > 0 && (
+                        <div className="flex justify-between items-center text-amber-800">
+                          <span>
+                            Biaya Layanan Online ({serviceFeeType === 'percentage' ? `${serviceFeeValue}%` : 'Nominal'}):
+                          </span>
+                          <span className="font-bold">{formatRupiah(formServiceFee)}</span>
+                        </div>
+                      )}
+                      <div className="pt-2 border-t border-slate-200 flex justify-between items-center">
+                        <span className="font-black text-slate-900">Total HPP Riil per Porsi:</span>
+                        <span className="font-black text-red-600 text-sm">{formatRupiah(formTotalHpp)}</span>
+                      </div>
+                      {formPrice > 0 && (
+                        <div className="flex justify-between items-center text-[11px] pt-1 border-t border-slate-200/60">
+                          <span className="text-slate-500">Estimasi Laba Bersih per Porsi:</span>
+                          <span className={`font-black ${formNetProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                            {formatRupiah(formNetProfit)} ({formMargin}%)
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
 
               <div className="flex justify-end space-x-2 pt-4 border-t border-slate-200">

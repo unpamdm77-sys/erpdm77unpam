@@ -20,6 +20,7 @@ const TAB_TITLES: Record<string, string> = {
   products: 'Menu & Kalkulasi HPP (BOM Resep)',
   materials: 'Manajemen Stok Bahan Baku',
   adjustment: 'Stok Adjustment (Stock Opname)',
+  'stock-request': 'Request Stok Inventaris (RSI)',
   finance: 'Laporan Keuangan & Pengeluaran',
   history: 'Riwayat Penjualan Kasir',
   import: 'Export & Import Excel',

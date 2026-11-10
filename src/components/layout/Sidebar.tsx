@@ -18,7 +18,8 @@ import {
   Users,
   LogOut,
   ChevronRight,
-  CreditCard
+  CreditCard,
+  ClipboardList
 } from 'lucide-react';
 import { UserRole } from '../../types/erp';
 
@@ -40,6 +41,7 @@ const ALL_NAV_ITEMS = [
   { id: 'products', label: 'Menu & HPP', icon: Utensils },
   { id: 'materials', label: 'Stok Bahan', icon: Boxes },
   { id: 'adjustment', label: 'Stok Adjustment', icon: Sliders },
+  { id: 'stock-request', label: 'Request Stok (RSI)', icon: ClipboardList },
   { id: 'finance', label: 'Laporan Keuangan', icon: Wallet },
   { id: 'history', label: 'Riwayat Penjualan', icon: History },
   { id: 'import', label: 'Import Excel', icon: FileSpreadsheet },
@@ -58,6 +60,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const {
     config,
     transactions,
+    stockRequests,
     currentUser,
     logout,
     firestoreStatus,
@@ -69,6 +72,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   } = useERP();
   const isSheetConfigured = Boolean(config.googleWebAppUrl && config.googleWebAppUrl.trim().length > 0);
   const pendingCount = transactions.filter(t => !t.syncedToGoogleSheet).length;
+  const pendingRsiCount = (stockRequests || []).filter(r => r.status === 'PENDING').length;
 
   // Role permissions filter
   const isStaffOrSupervisor = currentUser.role === 'STAFF' || currentUser.role === 'SUPERVISOR';
@@ -93,6 +97,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     switch (r) {
       case 'OWNER':
         return <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-400 text-slate-950">OWNER</span>;
+      case 'MANAGER':
+        return <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-purple-500 text-white">MGR</span>;
       case 'SUPERVISOR':
         return <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-red-500 text-white">SPV</span>;
       case 'FINANCE':
@@ -160,6 +166,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
                 {item.id === 'pos' && !isActive && (
                   <span className="w-2 h-2 rounded-full bg-red-600 animate-ping"></span>
+                )}
+                {item.id === 'stock-request' && pendingRsiCount > 0 && (
+                  <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-black ${
+                    isActive
+                      ? 'bg-white text-red-600'
+                      : 'bg-amber-500 text-white'
+                  }`}>
+                    {pendingRsiCount}
+                  </span>
                 )}
                 {item.ownerOnly && (
                   <span className={`text-[9px] px-1.5 py-0.5 rounded font-black border ${

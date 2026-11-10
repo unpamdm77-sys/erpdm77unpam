@@ -13,11 +13,13 @@ import firebaseConfig from '../../firebase-applet-config.json';
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 export const auth = getAuth(app);
 
-// Configure Google Auth Provider with Google Sheets and Google Drive Scopes
+// Configure Google Auth Provider with Google Sheets, Drive, and Chat Scopes
 const provider = new GoogleAuthProvider();
 provider.addScope('https://www.googleapis.com/auth/spreadsheets');
 provider.addScope('https://www.googleapis.com/auth/drive');
 provider.addScope('https://www.googleapis.com/auth/drive.file');
+provider.addScope('https://www.googleapis.com/auth/chat.messages');
+provider.addScope('https://www.googleapis.com/auth/chat.spaces');
 provider.setCustomParameters({
   prompt: 'select_account'
 });

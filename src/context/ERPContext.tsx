@@ -8,6 +8,7 @@ import {
   PurchaseOrder,
   Expense,
   StockAdjustment,
+  StockRequest,
   ERPConfig,
   PaymentMethod,
   ParkedOrder,
@@ -66,6 +67,8 @@ import {
   deleteExpenseFromFirestore,
   saveAdjustmentToFirestore,
   deleteAdjustmentFromFirestore,
+  saveStockRequestToFirestore,
+  deleteStockRequestFromFirestore,
   saveUserToFirestore,
   deleteUserFromFirestore,
   saveSettingsToFirestore,
@@ -180,6 +183,18 @@ interface ERPContextType {
   }) => void;
   deleteAdjustment: (id: string, restoreStock?: boolean) => void;
 
+  // Sistem Request Stok Inventaris (RSI)
+  stockRequests: StockRequest[];
+  addStockRequest: (data: {
+    materialId: string;
+    qty: number;
+    purposeCategory: StockRequest['purposeCategory'];
+    requestedBy: string;
+    notes?: string;
+  }) => StockRequest | null;
+  commitStockRequest: (id: string, committedByName: string) => Promise<{ success: boolean; message: string }>;
+  deleteStockRequest: (id: string) => void;
+
   // History & Refund
   refundTransaction: (transactionId: string) => void;
   deleteTransaction: (transactionId: string, restoreStock?: boolean) => void;
@@ -235,6 +250,7 @@ const STORAGE_KEYS = {
   PURCHASES: 'dimsum77_purchases_v1',
   EXPENSES: 'dimsum77_expenses_v1',
   ADJUSTMENTS: 'dimsum77_adjustments_v1',
+  STOCK_REQUESTS: 'dimsum77_stock_requests_v1',
   CONFIG: 'dimsum77_config_v1',
   PARKED: 'dimsum77_parked_v1',
   USERS: 'dimsum77_users_v1',
@@ -295,6 +311,11 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [adjustments, setAdjustments] = useState<StockAdjustment[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.ADJUSTMENTS);
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [stockRequests, setStockRequests] = useState<StockRequest[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.STOCK_REQUESTS);
     return saved ? JSON.parse(saved) : [];
   });
 
@@ -453,6 +474,10 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.ADJUSTMENTS, JSON.stringify(adjustments));
   }, [adjustments]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.STOCK_REQUESTS, JSON.stringify(stockRequests));
+  }, [stockRequests]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.CONFIG, JSON.stringify(config));
@@ -780,7 +805,14 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setAdjustments(cloudAdj);
     }, err => handleFirestoreError(err, OperationType.LIST, 'adjustments'));
 
-    // 7. Users listener
+    // 7. Stock Requests (RSI) listener
+    const unsubStockRequests = onSnapshot(collection(db, 'stockRequests'), snapshot => {
+      const cloudReqs = snapshot.docs.map(d => d.data() as StockRequest);
+      cloudReqs.sort((a, b) => (b.date || b.id).localeCompare(a.date || a.id));
+      setStockRequests(cloudReqs);
+    }, err => handleFirestoreError(err, OperationType.LIST, 'stockRequests'));
+
+    // 8. Users listener
     const unsubUsers = onSnapshot(collection(db, 'users'), snapshot => {
       if (!snapshot.empty) {
         const cloudUsers = snapshot.docs.map(d => d.data() as UserAccount);
@@ -790,7 +822,7 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }, err => handleFirestoreError(err, OperationType.LIST, 'users'));
 
-    // 8. Settings listener
+    // 9. Settings listener
     const unsubSettings = onSnapshot(doc(db, 'settings', 'store_config'), docSnap => {
       if (docSnap.exists()) {
         const data = docSnap.data();
@@ -839,6 +871,7 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       unsubPurchases();
       unsubExpenses();
       unsubAdjustments();
+      unsubStockRequests();
       unsubUsers();
       unsubSettings();
     };
@@ -1519,6 +1552,85 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     deleteAdjustmentFromFirestore(id);
   };
 
+  // Sistem Request Stok Inventaris (RSI)
+  const addStockRequest = (data: {
+    materialId: string;
+    qty: number;
+    purposeCategory: StockRequest['purposeCategory'];
+    requestedBy: string;
+    notes?: string;
+  }): StockRequest | null => {
+    const mat = materials.find(m => m.id === data.materialId);
+    if (!mat) return null;
+
+    const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const countToday = stockRequests.filter(r => r.date && r.date.startsWith(new Date().toISOString().slice(0, 10))).length + 1;
+    const requestNo = `RSI-${todayStr}-${countToday.toString().padStart(3, '0')}`;
+
+    const newReq: StockRequest = {
+      id: `rsi-${Date.now()}`,
+      requestNo,
+      date: new Date().toISOString(),
+      materialId: mat.id,
+      materialName: mat.name,
+      materialCode: mat.code,
+      qty: Number(data.qty),
+      unit: mat.unit,
+      costPerUnit: mat.costPerUnit,
+      totalCost: Number(data.qty) * mat.costPerUnit,
+      purposeCategory: data.purposeCategory,
+      requestedBy: data.requestedBy || currentUser.name,
+      notes: data.notes || '',
+      status: 'PENDING'
+    };
+
+    setStockRequests(prev => [newReq, ...prev]);
+    saveStockRequestToFirestore(newReq);
+    return newReq;
+  };
+
+  const commitStockRequest = async (id: string, committedByName: string): Promise<{ success: boolean; message: string }> => {
+    const req = stockRequests.find(r => r.id === id);
+    if (!req) return { success: false, message: 'Request stok tidak ditemukan.' };
+    if (req.status === 'COMMITTED') return { success: false, message: 'Pengajuan ini sudah berstatus COMMITTED.' };
+
+    const mat = materials.find(m => m.id === req.materialId);
+    if (!mat) return { success: false, message: 'Data bahan material tidak ditemukan di inventaris.' };
+
+    const updatedStock = Math.max(0, mat.stock - req.qty);
+    const updatedMat: Material = {
+      ...mat,
+      stock: updatedStock,
+      lastUpdated: new Date().toISOString().slice(0, 10)
+    };
+
+    // Eksekusi Stok: kurangi stok bahan di state & Firestore
+    setMaterials(prev => prev.map(m => m.id === mat.id ? updatedMat : m));
+    await saveMaterialToFirestore(updatedMat);
+
+    // Update RSI record status menjadi COMMITTED
+    const committedReq: StockRequest = {
+      ...req,
+      status: 'COMMITTED',
+      committedBy: committedByName,
+      committedAt: new Date().toISOString()
+    };
+
+    setStockRequests(prev => prev.map(r => r.id === id ? committedReq : r));
+    await saveStockRequestToFirestore(committedReq);
+
+    posSound.playCashRegister();
+    return {
+      success: true,
+      message: `Berhasil commit ${req.requestNo}! Stok ${mat.name} berkurang ${req.qty} ${mat.unit} (sisa stok: ${updatedStock} ${mat.unit}).`
+    };
+  };
+
+  const deleteStockRequest = (id: string) => {
+    setStockRequests(prev => prev.filter(r => r.id !== id));
+    deleteStockRequestFromFirestore(id);
+  };
+
   // Void / Refund Transaction (Restores Raw Material Stock!)
   const refundTransaction = (transactionId: string) => {
     const trx = transactions.find(t => t.id === transactionId);
@@ -2175,6 +2287,7 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         purchases,
         expenses,
         adjustments,
+        stockRequests,
         parkedOrders,
         config,
         cart,
@@ -2237,6 +2350,9 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deleteExpense,
         addAdjustment,
         deleteAdjustment,
+        addStockRequest,
+        commitStockRequest,
+        deleteStockRequest,
         refundTransaction,
         deleteTransaction,
         clearAllTransactions,

@@ -52,6 +52,12 @@ service cloud.firestore {
       allow write: if isSignedIn() || request.time < timestamp.date(2027, 1, 1);
     }
 
+    // Stock Requests (RSI - Non-Sales Operational Stock)
+    match /stockRequests/{requestId} {
+      allow read: if true;
+      allow write: if isSignedIn() || request.time < timestamp.date(2027, 1, 1);
+    }
+
     // User Accounts (RBAC)
     match /users/{userId} {
       allow read: if true;

@@ -207,6 +207,8 @@ export const AccountSettingsTab: React.FC<AccountSettingsTabProps> = ({ onSwitch
     switch (r) {
       case 'OWNER':
         return <span className="px-2.5 py-1 bg-amber-100 text-amber-900 border border-amber-300 rounded-lg text-[10px] font-black">👑 OWNER</span>;
+      case 'MANAGER':
+        return <span className="px-2.5 py-1 bg-purple-100 text-purple-900 border border-purple-300 rounded-lg text-[10px] font-black">🏢 MANAGER</span>;
       case 'SUPERVISOR':
         return <span className="px-2.5 py-1 bg-red-100 text-red-900 border border-red-300 rounded-lg text-[10px] font-black">👔 SUPERVISI / KEPALA TOKO</span>;
       case 'FINANCE':
@@ -543,6 +545,7 @@ export const AccountSettingsTab: React.FC<AccountSettingsTabProps> = ({ onSwitch
                 >
                   <option value="STAFF">STAFF KASIR (Frontliner Kasir)</option>
                   <option value="SUPERVISOR">SUPERVISI / KEPALA TOKO (Approval & Operasional)</option>
+                  <option value="MANAGER">MANAGER (Approval RSI & Operasional)</option>
                   <option value="FINANCE">FINANCE (Admin Keuangan & Laba Rugi)</option>
                   <option value="OWNER">OWNER (Pemilik Usaha - Full Akses)</option>
                 </select>

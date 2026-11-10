@@ -131,6 +131,30 @@
       },
       "required": ["id", "username", "password", "name", "role", "isActive"]
     },
+    "stockRequest": {
+      "title": "StockRequest",
+      "description": "Inventory stock request for non-sales operational usage with supervisor/manager approval",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "requestNo": { "type": "string" },
+        "date": { "type": "string" },
+        "materialId": { "type": "string" },
+        "materialName": { "type": "string" },
+        "materialCode": { "type": "string" },
+        "qty": { "type": "number" },
+        "unit": { "type": "string" },
+        "costPerUnit": { "type": "number" },
+        "totalCost": { "type": "number" },
+        "purposeCategory": { "type": "string" },
+        "requestedBy": { "type": "string" },
+        "notes": { "type": "string" },
+        "status": { "type": "string" },
+        "committedBy": { "type": "string" },
+        "committedAt": { "type": "string" }
+      },
+      "required": ["id", "requestNo", "date", "materialId", "qty", "purposeCategory", "requestedBy", "status"]
+    },
     "systemSettings": {
       "title": "SystemSettings",
       "description": "Global store settings, categories, and sales targets",
@@ -169,6 +193,10 @@
     "/adjustments/{adjustmentId}": {
       "schema": "adjustment",
       "description": "Stock opname adjustment records"
+    },
+    "/stockRequests/{requestId}": {
+      "schema": "stockRequest",
+      "description": "Operational stock request and approval records"
     },
     "/users/{userId}": {
       "schema": "userAccount",
