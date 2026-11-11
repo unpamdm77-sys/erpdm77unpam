@@ -23,7 +23,9 @@ import {
 export const FinanceTab: React.FC = () => {
   const { transactions, expenses, addExpense, updateExpense, deleteExpense, currentUser } = useERP();
 
-  const [dateFilter, setDateFilter] = useState<'today' | '7days' | 'month' | 'all'>('month');
+  const [dateFilter, setDateFilter] = useState<'today' | '7days' | 'month' | 'all' | 'custom'>('month');
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
   const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [expenseSearch, setExpenseSearch] = useState('');
@@ -47,6 +49,13 @@ export const FinanceTab: React.FC = () => {
     if (dateFilter === 'today') return dateStr.startsWith(todayStr);
     if (dateFilter === '7days') return dateStr.slice(0, 10) >= sevenDaysAgo;
     if (dateFilter === 'month') return dateStr.startsWith(currentMonthStr);
+    if (dateFilter === 'custom') {
+      const ymd = dateStr.slice(0, 10);
+      if (customStart && customEnd) return ymd >= customStart && ymd <= customEnd;
+      if (customStart) return ymd >= customStart;
+      if (customEnd) return ymd <= customEnd;
+      return true;
+    }
     return true; // 'all'
   };
 
@@ -193,7 +202,32 @@ export const FinanceTab: React.FC = () => {
             >
               Semua
             </button>
+            <button
+              onClick={() => setDateFilter('custom')}
+              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl transition cursor-pointer ${dateFilter === 'custom' ? 'bg-red-600 text-white shadow-xs' : 'hover:text-slate-900'}`}
+            >
+              Kustom
+            </button>
           </div>
+
+          {dateFilter === 'custom' && (
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs">
+              <Calendar size={14} className="text-slate-400 shrink-0" />
+              <input
+                type="date"
+                value={customStart}
+                onChange={e => setCustomStart(e.target.value)}
+                className="bg-transparent text-slate-700 text-xs font-semibold focus:outline-none"
+              />
+              <span className="text-slate-400 text-xs font-bold">s/d</span>
+              <input
+                type="date"
+                value={customEnd}
+                onChange={e => setCustomEnd(e.target.value)}
+                className="bg-transparent text-slate-700 text-xs font-semibold focus:outline-none"
+              />
+            </div>
+          )}
 
           {/* Export PDF Button */}
           <button

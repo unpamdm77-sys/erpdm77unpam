@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 
 import { SupervisorApprovalModal } from '../auth/SupervisorApprovalModal';
+import { DateRangeFilter, DateFilterPreset, filterItemByDateRange } from '../common/DateRangeFilter';
 
 export const HistoryTab: React.FC = () => {
   const {
@@ -36,6 +37,10 @@ export const HistoryTab: React.FC = () => {
 
   const [search, setSearch] = useState('');
   const [selectedMethod, setSelectedMethod] = useState<string>('Semua');
+  const [datePreset, setDatePreset] = useState<DateFilterPreset>('ALL');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
   const [selectedTransactionForPrint, setSelectedTransactionForPrint] = useState<Transaction | null>(null);
   const [selectedTransactionForDetail, setSelectedTransactionForDetail] = useState<Transaction | null>(null);
   const [transactionPendingApproval, setTransactionPendingApproval] = useState<Transaction | null>(null);
@@ -56,8 +61,9 @@ export const HistoryTab: React.FC = () => {
       t.items.some(i => i.name.toLowerCase().includes(q));
 
     const matchesMethod = selectedMethod === 'Semua' || t.paymentMethod === selectedMethod;
+    const matchesDate = filterItemByDateRange(t.date, datePreset, startDate, endDate);
 
-    return matchesSearch && matchesMethod;
+    return matchesSearch && matchesMethod && matchesDate;
   });
 
   const totalOmsetCompleted = transactions
@@ -171,6 +177,22 @@ export const HistoryTab: React.FC = () => {
 
       {/* Filter and Table */}
       <div className="bg-white rounded-3xl p-4 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
+        {/* Date Filter Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div className="flex items-center space-x-2">
+            <Filter size={16} className="text-red-600" />
+            <span className="text-xs font-bold text-slate-800">Filter Tanggal Penjualan:</span>
+          </div>
+          <DateRangeFilter
+            preset={datePreset}
+            onPresetChange={setDatePreset}
+            startDate={startDate}
+            endDate={endDate}
+            onStartDateChange={setStartDate}
+            onEndDateChange={setEndDate}
+          />
+        </div>
+
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
             {['Semua', ...paymentMethods].map(m => (

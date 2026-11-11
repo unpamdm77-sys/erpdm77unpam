@@ -19,7 +19,8 @@ import {
   LogOut,
   ChevronRight,
   CreditCard,
-  ClipboardList
+  ClipboardList,
+  ClipboardCheck
 } from 'lucide-react';
 import { UserRole } from '../../types/erp';
 
@@ -42,6 +43,7 @@ const ALL_NAV_ITEMS = [
   { id: 'materials', label: 'Stok Bahan', icon: Boxes },
   { id: 'adjustment', label: 'Stok Adjustment', icon: Sliders },
   { id: 'stock-request', label: 'Request Stok (RSI)', icon: ClipboardList },
+  { id: 'stock-audit', label: 'Cek Stok & Audit', icon: ClipboardCheck },
   { id: 'finance', label: 'Laporan Keuangan', icon: Wallet },
   { id: 'history', label: 'Riwayat Penjualan', icon: History },
   { id: 'import', label: 'Import Excel', icon: FileSpreadsheet },
@@ -61,6 +63,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     config,
     transactions,
     stockRequests,
+    dailyStockChecks,
     currentUser,
     logout,
     firestoreStatus,
@@ -73,6 +76,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const isSheetConfigured = Boolean(config.googleWebAppUrl && config.googleWebAppUrl.trim().length > 0);
   const pendingCount = transactions.filter(t => !t.syncedToGoogleSheet).length;
   const pendingRsiCount = (stockRequests || []).filter(r => r.status === 'PENDING').length;
+  const pendingAuditCount = (dailyStockChecks || []).filter(c => c.status === 'PENDING_APPROVAL').length;
 
   // Role permissions filter
   const isStaffOrSupervisor = currentUser.role === 'STAFF' || currentUser.role === 'SUPERVISOR';
@@ -174,6 +178,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       : 'bg-amber-500 text-white'
                   }`}>
                     {pendingRsiCount}
+                  </span>
+                )}
+                {item.id === 'stock-audit' && pendingAuditCount > 0 && (
+                  <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-black ${
+                    isActive
+                      ? 'bg-white text-red-600'
+                      : 'bg-amber-500 text-white'
+                  }`}>
+                    {pendingAuditCount}
                   </span>
                 )}
                 {item.ownerOnly && (

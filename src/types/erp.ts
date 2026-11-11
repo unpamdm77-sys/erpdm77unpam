@@ -166,6 +166,38 @@ export interface StockRequest {
   syncedToGoogleSheet?: boolean;
 }
 
+export interface DailyStockCheckItem {
+  materialId: string;
+  materialName: string;
+  materialCode: string;
+  unit: UnitType;
+  costPerUnit: number;
+  systemStock: number; // Stok terhitung sistem
+  physicalStock: number; // Input hasil cek fisik
+  difference: number; // physicalStock - systemStock
+  isMatch: boolean; // difference === 0
+  salesYesterday?: number; // Pengurangan dari penjualan (BOM)
+  inflowYesterday?: number; // Penambahan dari restock (PO)
+  adjustmentYesterday?: number; // Penyesuaian kemarin
+  notes?: string;
+}
+
+export interface DailyStockCheck {
+  id: string;
+  checkNo: string; // e.g. CHK-20261110-001
+  type: 'YESTERDAY_AUDIT' | 'DAILY_SCHEDULED';
+  date: string; // Target audit date (YYYY-MM-DD)
+  createdAt: string; // Timestamp
+  checkedBy: string; // Staff name
+  status: 'PENDING_APPROVAL' | 'APPROVED';
+  approvedBy?: string; // Supervisor / Manager / Owner
+  approvedAt?: string;
+  syncStockOnApproval?: boolean; // If true, sets materials stock to physicalStock
+  items: DailyStockCheckItem[];
+  notes?: string;
+  syncedToFirestore?: boolean;
+}
+
 export interface ShiftSummary {
   cashierName: string;
   startTime: string;

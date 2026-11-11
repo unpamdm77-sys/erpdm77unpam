@@ -9,6 +9,8 @@ import {
   Expense,
   StockAdjustment,
   StockRequest,
+  DailyStockCheck,
+  DailyStockCheckItem,
   ERPConfig,
   PaymentMethod,
   ParkedOrder,
@@ -69,6 +71,8 @@ import {
   deleteAdjustmentFromFirestore,
   saveStockRequestToFirestore,
   deleteStockRequestFromFirestore,
+  saveDailyStockCheckToFirestore,
+  deleteDailyStockCheckFromFirestore,
   saveUserToFirestore,
   deleteUserFromFirestore,
   saveSettingsToFirestore,
@@ -195,6 +199,12 @@ interface ERPContextType {
   commitStockRequest: (id: string, committedByName: string) => Promise<{ success: boolean; message: string }>;
   deleteStockRequest: (id: string) => void;
 
+  // Cek Stok Yesterday & Harian (Stock Audit & Approval)
+  dailyStockChecks: DailyStockCheck[];
+  saveDailyStockCheck: (data: Omit<DailyStockCheck, 'id' | 'createdAt' | 'checkNo'> & { id?: string; checkNo?: string }) => DailyStockCheck;
+  approveDailyStockCheck: (id: string, supervisorName: string, syncStockToPhysical?: boolean) => Promise<{ success: boolean; message: string }>;
+  deleteDailyStockCheck: (id: string) => void;
+
   // History & Refund
   refundTransaction: (transactionId: string) => void;
   deleteTransaction: (transactionId: string, restoreStock?: boolean) => void;
@@ -251,6 +261,7 @@ const STORAGE_KEYS = {
   EXPENSES: 'dimsum77_expenses_v1',
   ADJUSTMENTS: 'dimsum77_adjustments_v1',
   STOCK_REQUESTS: 'dimsum77_stock_requests_v1',
+  DAILY_CHECKS: 'dimsum77_daily_checks_v1',
   CONFIG: 'dimsum77_config_v1',
   PARKED: 'dimsum77_parked_v1',
   USERS: 'dimsum77_users_v1',
@@ -322,6 +333,11 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [stockRequests, setStockRequests] = useState<StockRequest[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.STOCK_REQUESTS);
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [dailyStockChecks, setDailyStockChecks] = useState<DailyStockCheck[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.DAILY_CHECKS);
     return saved ? JSON.parse(saved) : [];
   });
 
@@ -484,6 +500,10 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.STOCK_REQUESTS, JSON.stringify(stockRequests));
   }, [stockRequests]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.DAILY_CHECKS, JSON.stringify(dailyStockChecks));
+  }, [dailyStockChecks]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.CONFIG, JSON.stringify(config));
@@ -842,6 +862,15 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setStockRequests(cloudReqs);
     }, err => handleFirestoreError(err, OperationType.LIST, 'stockRequests'));
 
+    // 7b. Daily Stock Checks (Yesterday Audit & Scheduled) listener
+    const unsubDailyStockChecks = onSnapshot(collection(db, 'dailyStockChecks'), snapshot => {
+      setFirestoreStatus('connected');
+      setIsOnline(true);
+      const cloudChecks = snapshot.docs.map(d => d.data() as DailyStockCheck);
+      cloudChecks.sort((a, b) => (b.date || b.id).localeCompare(a.date || a.id));
+      setDailyStockChecks(cloudChecks);
+    }, err => handleFirestoreError(err, OperationType.LIST, 'dailyStockChecks'));
+
     // 8. Users listener
     const unsubUsers = onSnapshot(collection(db, 'users'), snapshot => {
       setFirestoreStatus('connected');
@@ -906,6 +935,7 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       unsubExpenses();
       unsubAdjustments();
       unsubStockRequests();
+      unsubDailyStockChecks();
       unsubUsers();
       unsubSettings();
     };
@@ -1636,6 +1666,84 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     deleteStockRequestFromFirestore(id);
   };
 
+  // Cek Stok Yesterday & Harian (Stock Audit & Approval)
+  const saveDailyStockCheck = (data: Omit<DailyStockCheck, 'id' | 'createdAt' | 'checkNo'> & { id?: string; checkNo?: string }): DailyStockCheck => {
+    const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const count = dailyStockChecks.length + 1;
+    const checkNo = data.checkNo || `CHK-${todayStr}-${count.toString().padStart(3, '0')}`;
+    const newCheck: DailyStockCheck = {
+      ...data,
+      id: data.id || `chk-${Date.now()}`,
+      checkNo,
+      createdAt: new Date().toISOString(),
+      syncedToFirestore: true
+    };
+
+    setDailyStockChecks(prev => {
+      const existingIdx = prev.findIndex(c => c.id === newCheck.id);
+      if (existingIdx >= 0) {
+        const updated = [...prev];
+        updated[existingIdx] = newCheck;
+        return updated;
+      }
+      return [newCheck, ...prev];
+    });
+
+    saveDailyStockCheckToFirestore(newCheck);
+    return newCheck;
+  };
+
+  const approveDailyStockCheck = async (
+    id: string,
+    supervisorName: string,
+    syncStockToPhysical = false
+  ): Promise<{ success: boolean; message: string }> => {
+    const check = dailyStockChecks.find(c => c.id === id);
+    if (!check) return { success: false, message: 'Data audit cek stok tidak ditemukan.' };
+    if (check.status === 'APPROVED') return { success: false, message: 'Audit cek stok ini sudah disetujui (Approved) sebelumnya.' };
+
+    // If syncStockToPhysical is true, synchronize materials in database to physical count
+    if (syncStockToPhysical && check.items && check.items.length > 0) {
+      setMaterials(prev => {
+        return prev.map(m => {
+          const matchingItem = check.items.find(ci => ci.materialId === m.id);
+          if (matchingItem !== undefined) {
+            const updatedMat: Material = {
+              ...m,
+              stock: matchingItem.physicalStock,
+              lastUpdated: new Date().toISOString().slice(0, 10)
+            };
+            saveMaterialToFirestore(updatedMat);
+            return updatedMat;
+          }
+          return m;
+        });
+      });
+    }
+
+    const approvedCheck: DailyStockCheck = {
+      ...check,
+      status: 'APPROVED',
+      approvedBy: supervisorName,
+      approvedAt: new Date().toISOString(),
+      syncStockOnApproval: syncStockToPhysical
+    };
+
+    setDailyStockChecks(prev => prev.map(c => c.id === id ? approvedCheck : c));
+    await saveDailyStockCheckToFirestore(approvedCheck);
+    posSound.playCashRegister();
+
+    return {
+      success: true,
+      message: `Audit Cek Stok ${approvedCheck.checkNo} berhasil disetujui & dikunci oleh ${supervisorName}!${syncStockToPhysical ? ' Stok bahan baku telah disinkronkan ke hitungan fisik.' : ''}`
+    };
+  };
+
+  const deleteDailyStockCheck = (id: string) => {
+    setDailyStockChecks(prev => prev.filter(c => c.id !== id));
+    deleteDailyStockCheckFromFirestore(id);
+  };
+
   // Void / Refund Transaction (Restores Raw Material Stock!)
   const refundTransaction = (transactionId: string) => {
     const trx = transactions.find(t => t.id === transactionId);
@@ -2358,6 +2466,10 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addStockRequest,
         commitStockRequest,
         deleteStockRequest,
+        dailyStockChecks,
+        saveDailyStockCheck,
+        approveDailyStockCheck,
+        deleteDailyStockCheck,
         refundTransaction,
         deleteTransaction,
         clearAllTransactions,

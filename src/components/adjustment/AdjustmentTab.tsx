@@ -10,9 +10,11 @@ import {
   CheckCircle2,
   TrendingDown,
   RotateCcw,
-  Trash2
+  Trash2,
+  Filter
 } from 'lucide-react';
 import { DecimalInput } from '../common/DecimalInput';
+import { DateRangeFilter, DateFilterPreset, filterItemByDateRange } from '../common/DateRangeFilter';
 
 export const AdjustmentTab: React.FC = () => {
   const { materials, adjustments, addAdjustment, deleteAdjustment, config, currentUser } = useERP();
@@ -22,6 +24,9 @@ export const AdjustmentTab: React.FC = () => {
   const [actualStock, setActualStock] = useState<number | ''>('');
   const [reason, setReason] = useState<StockAdjustment['reason']>('Selisih Hitung / Opname');
   const [search, setSearch] = useState('');
+  const [datePreset, setDatePreset] = useState<DateFilterPreset>('ALL');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   const selectedMat = materials.find(m => m.id === selectedMaterialId);
   const systemStock = selectedMat ? selectedMat.stock : 0;
@@ -63,7 +68,9 @@ export const AdjustmentTab: React.FC = () => {
 
   const filteredAdjustments = adjustments.filter(a => {
     const q = search.toLowerCase();
-    return a.materialName.toLowerCase().includes(q) || a.reason.toLowerCase().includes(q);
+    const matchesSearch = a.materialName.toLowerCase().includes(q) || a.reason.toLowerCase().includes(q);
+    const matchesDate = filterItemByDateRange(a.date, datePreset, startDate, endDate);
+    return matchesSearch && matchesDate;
   });
 
   return (
@@ -118,6 +125,22 @@ export const AdjustmentTab: React.FC = () => {
 
       {/* Adjustments Table */}
       <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-4">
+        {/* Date Filter Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div className="flex items-center space-x-2">
+            <Filter size={16} className="text-red-600" />
+            <span className="text-xs font-bold text-slate-800">Filter Tanggal Penyesuaian (Opname):</span>
+          </div>
+          <DateRangeFilter
+            preset={datePreset}
+            onPresetChange={setDatePreset}
+            startDate={startDate}
+            endDate={endDate}
+            onStartDateChange={setStartDate}
+            onEndDateChange={setEndDate}
+          />
+        </div>
+
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h3 className="font-bold text-slate-900 text-base">Riwayat Stock Opname & Penyesuaian</h3>
 

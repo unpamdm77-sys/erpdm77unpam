@@ -21,6 +21,7 @@ const TAB_TITLES: Record<string, string> = {
   materials: 'Manajemen Stok Bahan Baku',
   adjustment: 'Stok Adjustment (Stock Opname)',
   'stock-request': 'Request Stok Inventaris (RSI)',
+  'stock-audit': 'Cek Stok Yesterday & Harian (Stock Audit)',
   finance: 'Laporan Keuangan & Pengeluaran',
   history: 'Riwayat Penjualan Kasir',
   import: 'Export & Import Excel',

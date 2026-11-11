@@ -17,11 +17,15 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { DecimalInput } from '../common/DecimalInput';
+import { DateRangeFilter, DateFilterPreset, filterItemByDateRange } from '../common/DateRangeFilter';
 
 export const PurchasingTab: React.FC = () => {
   const { materials, purchases, addPurchase, updatePurchase, deletePurchase, currentUser } = useERP();
 
   const [search, setSearch] = useState('');
+  const [datePreset, setDatePreset] = useState<DateFilterPreset>('ALL');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingPO, setEditingPO] = useState<PurchaseOrder | null>(null);
 
@@ -122,11 +126,14 @@ export const PurchasingTab: React.FC = () => {
 
   const filteredPurchases = purchases.filter(p => {
     const q = search.toLowerCase();
-    return (
+    const matchesSearch =
       p.poNumber.toLowerCase().includes(q) ||
       p.materialName.toLowerCase().includes(q) ||
-      p.supplier.toLowerCase().includes(q)
-    );
+      p.supplier.toLowerCase().includes(q);
+
+    const matchesDate = filterItemByDateRange(p.date, datePreset, startDate, endDate);
+
+    return matchesSearch && matchesDate;
   });
 
   return (
@@ -197,6 +204,22 @@ export const PurchasingTab: React.FC = () => {
 
       {/* PURCHASES TABLE */}
       <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-4">
+        {/* Date Filter Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div className="flex items-center space-x-2">
+            <Filter size={16} className="text-red-600" />
+            <span className="text-xs font-bold text-slate-800">Filter Tanggal Restock:</span>
+          </div>
+          <DateRangeFilter
+            preset={datePreset}
+            onPresetChange={setDatePreset}
+            startDate={startDate}
+            endDate={endDate}
+            onStartDateChange={setStartDate}
+            onEndDateChange={setEndDate}
+          />
+        </div>
+
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h3 className="font-bold text-slate-900 text-sm">Arsip Faktur & Surat Jalan Pembelian</h3>
           <div className="relative w-full sm:w-64">
