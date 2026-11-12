@@ -176,6 +176,7 @@ export interface DailyStockCheckItem {
   physicalStock: number; // Input hasil cek fisik
   difference: number; // physicalStock - systemStock
   isMatch: boolean; // difference === 0
+  hasInput?: boolean; // true if staff entered a physical count
   salesYesterday?: number; // Pengurangan dari penjualan (BOM)
   inflowYesterday?: number; // Penambahan dari restock (PO)
   adjustmentYesterday?: number; // Penyesuaian kemarin

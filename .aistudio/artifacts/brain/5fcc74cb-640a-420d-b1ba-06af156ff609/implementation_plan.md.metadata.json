@@ -1,6 +1,0 @@
-{
-  "summary": "Rencana implementasi peningkatan sistem ERP & POS Dimsum Mentai 77:\n1. Penyesuaian tema visual menjadi Light Theme Putih-Biru Modern Clean dengan tetap mempertahankan 100% tata letak (layout) dan struktur navigasi yang ada.\n2. Fitur Upload Foto Menu Makanan dari perangkat/kamera (dengan kompresi otomatis) untuk memudahkan identifikasi visual oleh kasir di grid POS.\n3. Fitur Edit/Adjust transaksi Purchasing (pembelian bahan) dan penyesuaian catatan biaya operasional (Finance).\n4. Menu Import Data canggih untuk Excel & PDF dengan template siap pakai dan panduan format yang elegan.",
-  "updatedAt": "2026-11-06T14:56:37.821197372Z",
-  "requestFeedback": true,
-  "userFacing": true
-}

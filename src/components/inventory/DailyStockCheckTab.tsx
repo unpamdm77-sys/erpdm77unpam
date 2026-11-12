@@ -155,13 +155,12 @@ export const DailyStockCheckTab: React.FC = () => {
       // Or in standard food outlet practice: current stock reflects physical stock, so we present current theoretical inventory
       const systemStock = currentStock;
 
-      // Staff physical input
+      // Staff physical input - pure user input, no auto-match
       const physicalInput = physicalCounts[mat.id];
-      const physicalStock =
-        typeof physicalInput === 'number' ? physicalInput : systemStock;
-
-      const difference = physicalStock - systemStock;
-      const isMatch = Math.abs(difference) < 0.0001;
+      const hasInput = typeof physicalInput === 'number';
+      const physicalStock = hasInput ? physicalInput : 0;
+      const difference = hasInput ? physicalStock - systemStock : -systemStock;
+      const isMatch = hasInput && Math.abs(physicalStock - systemStock) < 0.0001;
 
       return {
         materialId: mat.id,
@@ -173,6 +172,7 @@ export const DailyStockCheckTab: React.FC = () => {
         physicalStock,
         difference,
         isMatch,
+        hasInput,
         salesYesterday: salesQty,
         inflowYesterday: inflowQty,
         adjustmentYesterday: adjDiff - rsiQty,
@@ -196,10 +196,11 @@ export const DailyStockCheckTab: React.FC = () => {
 
   // Overall audit statistics
   const totalAuditItems = auditItems.length;
-  const matchCount = auditItems.filter(i => i.isMatch).length;
-  const notMatchCount = auditItems.filter(i => !i.isMatch).length;
+  const matchCount = auditItems.filter(i => i.hasInput && i.isMatch).length;
+  const notMatchCount = auditItems.filter(i => i.hasInput && !i.isMatch).length;
+  const pendingInputCount = auditItems.filter(i => !i.hasInput).length;
   const totalDifferenceCost = auditItems.reduce(
-    (sum, i) => sum + (i.difference < 0 ? Math.abs(i.difference) * i.costPerUnit : 0),
+    (sum, i) => sum + (i.hasInput && i.difference < 0 ? Math.abs(i.difference) * i.costPerUnit : 0),
     0
   );
 
@@ -218,20 +219,15 @@ export const DailyStockCheckTab: React.FC = () => {
     setSelectedMaterialIds([]);
   };
 
-  // Quick fill all physical inputs with system stock (for fast klop verification)
-  const handleQuickMatchAll = () => {
-    const updated: { [id: string]: number } = {};
-    auditItems.forEach(i => {
-      updated[i.materialId] = i.systemStock;
-    });
-    setPhysicalCounts(updated);
-    showToast('success', 'Semua stok fisik diisi sesuai stok terhitung sistem (Klop).');
-  };
-
   // Save audit
   const handleSaveAudit = () => {
     if (auditItems.length === 0) {
       showToast('error', 'Pilih minimal 1 bahan untuk dilakukan cek stok.');
+      return;
+    }
+
+    if (auditItems.every(i => !i.hasInput)) {
+      showToast('error', 'Mohon isi hasil hitung fisik nyata pada kolom kuning sebelum menyimpan audit.');
       return;
     }
 
@@ -256,6 +252,16 @@ export const DailyStockCheckTab: React.FC = () => {
     if (check) {
       setShowApprovalModal(check);
     } else {
+      if (auditItems.length === 0) {
+        showToast('error', 'Pilih minimal 1 bahan untuk dilakukan cek stok.');
+        return;
+      }
+
+      if (auditItems.every(i => !i.hasInput)) {
+        showToast('error', 'Mohon isi hasil hitung fisik nyata pada kolom kuning sebelum melakukan approval.');
+        return;
+      }
+
       // Save current audit and open approval
       const type = activeMode === 'YESTERDAY' ? 'YESTERDAY_AUDIT' : 'DAILY_SCHEDULED';
       const date = activeMode === 'YESTERDAY' ? selectedAuditDate : todayYmd;
@@ -436,8 +442,8 @@ export const DailyStockCheckTab: React.FC = () => {
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Total Bahan Diaudit</p>
               <div className="flex items-baseline justify-between mt-1">
                 <h3 className="text-2xl font-black text-slate-900">{totalAuditItems} Bahan</h3>
-                <span className="text-xs text-slate-500 font-semibold">
-                  {activeMode === 'YESTERDAY' ? 'Audit Kemarin' : 'Bahan Terjadwal'}
+                <span className={`text-xs font-semibold ${pendingInputCount > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                  {pendingInputCount > 0 ? `${pendingInputCount} Menunggu Input Fisik` : 'Semua Telah Dihitung'}
                 </span>
               </div>
             </div>
@@ -514,16 +520,6 @@ export const DailyStockCheckTab: React.FC = () => {
 
               {/* Action Buttons */}
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleQuickMatchAll}
-                  className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer"
-                  title="Salin semua stok terhitung ke input fisik bila seluruh bahan telah terverifikasi klop"
-                >
-                  <Sparkles size={14} className="text-amber-500" />
-                  <span>Isi Semua Klop</span>
-                </button>
-
                 <button
                   type="button"
                   onClick={handleSaveAudit}
@@ -726,7 +722,7 @@ export const DailyStockCheckTab: React.FC = () => {
                                 value={
                                   physicalCounts[item.materialId] !== undefined
                                     ? physicalCounts[item.materialId]
-                                    : item.systemStock
+                                    : ''
                                 }
                                 onChange={val => {
                                   setPhysicalCounts(prev => ({
@@ -735,7 +731,7 @@ export const DailyStockCheckTab: React.FC = () => {
                                   }));
                                 }}
                                 className="w-24 text-center px-2 py-1.5 bg-white border border-amber-300 rounded-xl font-black text-slate-900 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none shadow-xs"
-                                placeholder="0"
+                                placeholder="Input fisik..."
                               />
                               <span className="text-xs font-bold text-slate-500 w-8 text-left">
                                 {item.unit}
@@ -745,7 +741,9 @@ export const DailyStockCheckTab: React.FC = () => {
 
                           {/* Difference */}
                           <td className="py-3.5 px-4 text-center font-mono font-black">
-                            {isKlop ? (
+                            {!item.hasInput ? (
+                              <span className="text-slate-400 font-semibold">-</span>
+                            ) : isKlop ? (
                               <span className="text-emerald-600">0 {item.unit}</span>
                             ) : (
                               <span
@@ -761,7 +759,11 @@ export const DailyStockCheckTab: React.FC = () => {
 
                           {/* Status Badge with Strict Color Requirements */}
                           <td className="py-3.5 px-4 text-center">
-                            {isKlop ? (
+                            {!item.hasInput ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 border border-slate-200 text-slate-500 rounded-xl font-bold text-xs">
+                                <span>Belum Diinput</span>
+                              </span>
+                            ) : isKlop ? (
                               <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 border border-emerald-300 text-emerald-800 rounded-xl font-black text-xs shadow-xs animate-in fade-in">
                                 <CheckCircle2 size={14} className="text-emerald-600" />
                                 <span>Approved (Klop)</span>
@@ -776,7 +778,9 @@ export const DailyStockCheckTab: React.FC = () => {
 
                           {/* Difference Cost */}
                           <td className="py-3.5 px-4 text-right font-bold text-xs font-mono">
-                            {isKlop ? (
+                            {!item.hasInput ? (
+                              <span className="text-slate-400 font-semibold">-</span>
+                            ) : isKlop ? (
                               <span className="text-slate-400">Rp 0</span>
                             ) : (
                               <span
